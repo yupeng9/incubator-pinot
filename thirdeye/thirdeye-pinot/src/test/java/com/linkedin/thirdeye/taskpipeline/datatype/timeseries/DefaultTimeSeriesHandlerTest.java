@@ -11,10 +11,12 @@ import com.linkedin.thirdeye.dataframe.DataFrame;
 import com.linkedin.thirdeye.dataframe.DoubleSeries;
 import com.linkedin.thirdeye.dataframe.Series;
 import com.linkedin.thirdeye.dataframe.util.DataFrameUtils;
-import com.linkedin.thirdeye.datalayer.bao.AbstractManagerTestBase;
+import com.linkedin.thirdeye.datalayer.DaoTestUtils;
+import com.linkedin.thirdeye.datalayer.bao.DAOTestBase;
 import com.linkedin.thirdeye.datalayer.dto.DatasetConfigDTO;
 import com.linkedin.thirdeye.datalayer.dto.MetricConfigDTO;
 import com.linkedin.thirdeye.datalayer.pojo.MetricConfigBean;
+import com.linkedin.thirdeye.datasource.DAORegistry;
 import com.linkedin.thirdeye.datasource.MetricExpression;
 import com.linkedin.thirdeye.datasource.MetricFunction;
 import com.linkedin.thirdeye.datasource.ThirdEyeCacheRegistry;
@@ -40,10 +42,11 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.testng.Assert;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
-public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
+public class DefaultTimeSeriesHandlerTest {
   private ThirdEyeCacheRegistry cacheRegistry = ThirdEyeCacheRegistry.getInstance();
 
   private static final String DATA_SOURCE_NAME = PinotThirdEyeDataSource.class.getSimpleName();
@@ -65,12 +68,21 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
   private static final String OS_ONE = "iOS";
   private static final String OS_TWO = "Android";
 
+  private DAOTestBase testDAOProvider = null;
+  private DAORegistry daoRegistry = null;
+
   @BeforeClass
   void beforeClass() throws Exception {
-    super.init();
+    testDAOProvider = DAOTestBase.getInstance();
+    daoRegistry = DAORegistry.getInstance();
     initCacheAndDAORegistry();
     Assert.assertNotNull(daoRegistry.getMetricConfigDAO());
     Assert.assertNotNull(daoRegistry.getDatasetConfigDAO());
+  }
+
+  @AfterClass(alwaysRun = true)
+  void afterClass() {
+    testDAOProvider.cleanup();
   }
 
   private void initCacheAndDAORegistry() throws Exception {
@@ -94,9 +106,9 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
     cacheRegistry.registerQueryCache(mockQueryCache);
 
     // Creates metric config in MetricConfigDAO
-    MetricConfigDTO metricConfig1 = getTestMetricConfig(DATASET_NAME, METRIC_ID1_NAME, null);
-    MetricConfigDTO metricConfig2 = getTestMetricConfig(DATASET_NAME, METRIC_ID2_NAME, null);
-    MetricConfigDTO metricConfig3 = getTestMetricConfig(DATASET_NAME, METRIC_ID3_NAME, null);
+    MetricConfigDTO metricConfig1 = DaoTestUtils.getTestMetricConfig(DATASET_NAME, METRIC_ID1_NAME, null);
+    MetricConfigDTO metricConfig2 = DaoTestUtils.getTestMetricConfig(DATASET_NAME, METRIC_ID2_NAME, null);
+    MetricConfigDTO metricConfig3 = DaoTestUtils.getTestMetricConfig(DATASET_NAME, METRIC_ID3_NAME, null);
     metricConfig3.setDerivedMetricExpression(METRIC_EXPRESSION);
     metricConfig3.setDerived(true);
 
@@ -106,7 +118,7 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
 
     // Creates dataset config in cache
     LoadingCache<String, DatasetConfigDTO> mockDatasetConfigCache = Mockito.mock(LoadingCache.class);
-    Mockito.when(mockDatasetConfigCache.get(DATASET_NAME)).thenReturn(getTestDatasetConfig(DATASET_NAME));
+    Mockito.when(mockDatasetConfigCache.get(DATASET_NAME)).thenReturn(DaoTestUtils.getTestDatasetConfig(DATASET_NAME));
     cacheRegistry.registerDatasetConfigCache(mockDatasetConfigCache);
   }
 
@@ -221,11 +233,14 @@ public class DefaultTimeSeriesHandlerTest extends AbstractManagerTestBase {
     dataFrame.addSeries(TIME_COLUMN_NAME, 0L, 0L, 1L, 1L, 2L, 2L, 0L, 0L, 1L, 1L, 2L, 2L, 0L, 0L, 1L, 1L, 2L, 2L);
     dataFrame.addSeries(DIMENSION_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_ONE, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_TWO, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE, COUNTRY_THREE);
     dataFrame.addSeries(DIMENSION_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO, OS_ONE, OS_TWO);
-    dataFrame.addSeries(atomicMetric2, 100d, 200d, 101d, 201d, 102d, 202d, 10d, 20d, 10.1, 20.1, 10.2, 20.2, 1.0, 2.0, 1.01, 2.01, 1.02, 2.02);
-    dataFrame.addSeries(atomicMetric1, 110d, 210d, 111d, 211d, 112d, 212d, 11.0, 21.0, 11.1, 21.1, 11.2, 21.2, 1.10, 2.10, 1.11, 2.11, 1.12, 2.12);
 
-    Series sum_id1 = dataFrame.getSeries().get(atomicMetric1);
-    Series sum_id2 = dataFrame.getSeries().get(atomicMetric2);
+    Series sum_id1 = DoubleSeries
+        .buildFrom(110d, 210d, 111d, 211d, 112d, 212d, 11.0, 21.0, 11.1, 21.1, 11.2, 21.2, 1.10, 2.10, 1.11, 2.11, 1.12,
+            2.12);
+    Series sum_id2 = DoubleSeries
+        .buildFrom(100d, 200d, 101d, 201d, 102d, 202d, 10d, 20d, 10.1, 20.1, 10.2, 20.2, 1.0, 2.0, 1.01, 2.01, 1.02,
+            2.02);
+
     DoubleSeries.Builder builder = DoubleSeries.builder();
     for (int i = 0; i < sum_id1.size(); i++) {
       builder.addValues(sum_id1.getDouble(i) + sum_id2.getDouble(i));
