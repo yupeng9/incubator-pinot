@@ -65,6 +65,7 @@ export default Ember.Controller.extend({
       selectedTimeRange: '',
       selectedFilters: JSON.stringify({}),
       isAlertReady: false,
+      openReportModal: false,
       isReplayStarted: true,
       isReplayPending: false,
       isReplayDone: false,
@@ -595,6 +596,18 @@ export default Ember.Controller.extend({
       }
 
       this.set('currentPage', newPage);
+    },
+
+    onSubmitMissingAnomaly() {
+      console.log('submitted');
+    },
+
+    onCancelMissingAnomaly() {
+      console.log('cancelled');
+    },
+
+    onClickReportAnomaly() {
+      this.set('openReportModal', true);
     },
 
     /**

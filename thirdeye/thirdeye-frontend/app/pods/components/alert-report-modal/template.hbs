@@ -1,0 +1,201 @@
+<main class="alert-create card-container--padded te-form alert-report-modal__body">
+
+  <fieldset class="te-form__section te-form__section--first row">
+    <div class="col-xs-12">
+      <legend class="te-form__section-title te-report-title">Specify Metric, Alert, and Dimensions</legend>
+    </div>
+
+    <div class="form-group col-xs-4">
+      <label for="select-metric" class="control-label te-label required">Metric</label>
+      {{#power-select
+        search=(perform searchMetricsList)
+        selected=selectedMetricOption
+        onchange=(action "onSelectMetric")
+        loadingMessage="Waiting for the server...."
+        placeholder="Search by Metric Name"
+        searchPlaceholder="Type to filter..."
+        triggerId="select-metric"
+        triggerClass="te-form__select"
+        disabled=false
+        as |metric|
+      }}
+        {{metric.alias}}
+      {{/power-select}}
+    </div>
+
+    <div class="form-group col-xs-4">
+      <label for="select-metric" class="control-label te-label required">Alert</label>
+      {{#power-select
+        search=(perform searchMetricsList)
+        selected=selectedMetricOption
+        onchange=(action "onSelectMetric")
+        loadingMessage="Waiting for the server...."
+        placeholder="Search by Metric Name"
+        searchPlaceholder="Type to filter..."
+        triggerId="select-alert"
+        triggerClass="te-form__select"
+        disabled=false
+        as |metric|
+      }}
+        {{metric.alias}}
+      {{/power-select}}
+    </div>
+
+    <div class="form-group col-xs-4">
+      <label for="select-dimension" class="control-label te-label">Dimensions</label>
+      {{#power-select
+        classNames="te-input"
+        options=dimensions
+        selected=selectedDimension
+        onchange=(action "onSelectDimension")
+        loadingMessage="Waiting for the server...."
+        placeholder="Break Dimensions By..."
+        searchPlaceholder="Type to filter..."
+        triggerId="select-dimensionx"
+        triggerClass="te-form__select"
+        disabled=(not isMetricSelected)
+        as |dimension|
+      }}
+        {{dimension}}
+      {{/power-select}}
+    </div>
+  </fieldset>
+
+  <fieldset class="te-form__section row">
+    {{!-- Field: Sensitivity --}}
+    <div class="form-group col-xs-6">
+      <legend class="te-form__section-title te-report-title">Mark the Anomaly Region</legend>
+      <label class="control-label te-label">Start/End Dates</label>
+     {{date-range-picker
+        class="te-range-picker2 highz"
+        parentEl='te-modal'
+        timePicker=false
+        timePicker24Hour=true
+        timePickerIncrement=timePickerIncrement
+        maxDate=maxTime
+        start=viewRegionStart
+        end=viewRegionEnd
+        ranges=predefinedRanges
+        showCustomRangeLabel=false
+        format=uiDateFormat
+        serverFormat="YYYY-MM-DD HH:mm"
+        applyAction=(action "onRangeSelection")
+      }}
+    </div>
+  </fieldset>
+
+  <fieldset class="te-form__section row">
+    {{#if isSelectMetricError}}
+      {{#bs-alert type="danger"}}
+        <strong>{{selectMetricErrMsg}}</strong> Unable to fetch data for this metric.
+      {{/bs-alert}}
+    {{/if}}
+
+    <div class="col-xs-12">
+      <div class="te-graph-alert {{if (not isMetricSelected) 'te-graph-alert--pending'}}">
+        {{#if (or isFetchingDimensions isDimensionFetchDone)}}
+          <div class="te-form__super-label">...{{if isDimensionFetchDone 'Displaying' 'Loading'}} top 5 contributing subDimensions for <strong>{{selectedDimension}}</strong></div>
+        {{/if}}
+        {{#if isMetricDataLoading}}
+          <div class="spinner-wrapper--self-serve">{{ember-spinner}}</div>
+        {{/if}}
+        {{#if isMetricSelected}}
+          {{anomaly-graph
+            primaryMetric=selectedMetric
+            selectedDimensions=selectedDimensions
+            dimensions=topDimensions
+            showDimensions=true
+            isLoading=loading
+            showSubchart=true
+            showLegend=true
+            enableZoom=true
+            componentId='create-alert'
+            showGraphLegend=showGraphLegend
+            showGraphLegend=false
+            onSelection=(action "onSelection")
+            onPrimaryMetricToggle=(action "onPrimaryMetricToggle")
+            height=400
+          }}
+          <div class="te-form__note">
+            NOTE: If you find the metric shown above is inconsistent, please email <a class="thirdeye-link-secondary" target="_blank" href="{{graphMailtoLink}}">ask_thirdeye</a>.
+          </div>
+        {{else}}
+          <div class="te-graph-alert__content">
+            <div class="glyphicon glyphicon-{{if isMetricDataInvalid 'alert' 'equalizer'}} te-graph-alert__icon{{if isMetricDataInvalid '--warning'}}"></div>
+            <p class="te-graph-alert__pre-text">{{graphMessageText}}</p>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="te-form__section row">
+    <div class="col-xs-6">
+      <legend class="te-form__section-title te-report-title">Report as new trend?</legend>
+      <label class="control-label te-label">ThirdEye will consider anomaly as new trend and not consider this as anomaly in the future</label>
+    </div>
+      {{#x-toggle
+        value=isNewTrend
+        classNames="te-toggle te-toggle--form te-toggle--left report-toggle"
+        theme='ios'
+        showLabels=true
+        name="activeToggle"
+        onToggle=(action (mut isNewTrend))
+        as |toggle|}}
+          {{#toggle.label value=isNewTrend}}
+            <span class="te-label te-label--flush">{{if isNewTrend 'Yes' 'No'}}</span>
+          {{/toggle.label}}
+          {{toggle.switch theme='ios' onLabel='diff on' offLabel='diff off'}}
+      {{/x-toggle}}
+  </fieldset>
+
+  <fieldset class="te-form__section row">
+    {{!-- Field: Sensitivity --}}
+    <div class="form-group col-xs-8">
+      <legend class="te-form__section-title te-report-title">Additional info</legend>
+      <label class="control-label te-label">Related Links</label>
+      {{input
+        type="text"
+        id="anomaly-form-function-name"
+        class="form-control te-input"
+        placeholder="Links to JIRAs, InGraph Dashboards, etc"
+        value=alertFunctionName
+        focus-out="validateAlertName"
+        key-up="validateAlertName"
+        disabled=(not isMetricSelected)
+      }}
+{{!--     </div>
+    <div class="form-group col-xs-6"> --}}
+      <label class="control-label te-label">Comments</label>
+      {{textarea
+        cols="40"
+        rows="4"
+        type="textarea"
+        id="anomaly-form-function-name"
+        class="form-control te-input"
+        placeholder="Explain how it was discovered and the root cause"
+        value=alertFunctionName
+        focus-out="validateAlertName"
+        key-up="validateAlertName"
+        disabled=(not isMetricSelected)
+      }}
+    </div>
+  </fieldset>
+
+  {{#if isCreateAlertSuccess}}
+    {{#bs-alert type="success" class="te-form__banner te-form__banner--success"}}
+      <strong>Create Alert Success!</strong> You have created anomaly alert Id <strong>{{finalFunctionId}}</strong>
+      {{#if selectedConfigGroup}}
+        ... and assigned it to existing notification group <strong>{{selectedConfigGroup.name}}</strong>.
+      {{/if}}
+    {{/bs-alert}}
+  {{/if}}
+
+  {{#if isCreateAlertError}}
+    {{#bs-alert type="danger" class="te-form__banner te-form__banner--failure"}}
+      <strong>Create Alert Error!</strong> Alert creation has failed. Please try again.
+    {{/bs-alert}}
+  {{/if}}
+
+  {{outlet}}
+</main>

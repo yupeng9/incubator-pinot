@@ -109,7 +109,6 @@
                     applyAction=(action "onRangeSelection")
                   }}
                 {{/if}}
-
               </li>
             {{/each}}
           </ul>
@@ -143,7 +142,7 @@
 
         <div class="te-content-block">
           <h4>Anomalies over time ({{filteredAnomalies.length}})</h4>
-          <a class="te-pill-selectors__side-link te-pill-selectors__side-link--high" href="#">Report missing anomaly</a>
+          <a class="te-pill-selectors__side-link te-pill-selectors__side-link--high" {{action "onClickReportAnomaly" this}}>Report missing anomaly</a>
 
           <div class="te-pill-selectors">
             {{!-- Dimension selector --}}
@@ -175,6 +174,27 @@
               {{/power-select}}
             </div>
           </div>
+
+          {{#if openReportModal}}
+            {{#te-modal
+              headerText="Report Undetected Anomaly"
+              cancelButtonText="Cancel"
+              submitButtonText="Report"
+              submitAction=(action "onSubmitMissingAnomaly")
+              cancelAction=(action "onCancelMissingAnomaly")
+            }}
+            {{alert-report-modal
+              allConfigGroups=allConfigGroups
+              allAppNames=allAppNames
+              timePickerIncrement=timePickerIncrement
+              maxTime=maxTime
+              viewRegionStart=viewRegionStart
+              viewRegionEnd=viewRegionEnd
+              predefinedRanges=predefinedRanges
+              uiDateFormat=uiDateFormat
+            }}
+            {{/te-modal}}
+          {{/if}}
 
           {{!-- Alert anomaly graph --}}
           <div class="te-graph-container col-xs-12">

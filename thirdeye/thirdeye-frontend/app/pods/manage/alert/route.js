@@ -159,6 +159,7 @@ export default Ember.Route.extend({
     } = params;
     if (!id) { return; }
 
+
     return Ember.RSVP.hash({
       id,
       replay,
@@ -167,7 +168,9 @@ export default Ember.Route.extend({
       startDate,
       endDate,
       alert: fetch(`/onboard/function/${id}`).then(checkStatus),
-      email: fetch(`/thirdeye/email/function/${id}`).then(checkStatus)
+      email: fetch(`/thirdeye/email/function/${id}`).then(checkStatus),
+      allConfigGroups: fetch('/thirdeye/entity/ALERT_CONFIG').then(res => res.json()),
+      allAppNames: fetch('/thirdeye/entity/APPLICATION').then(res => res.json())
       // TODO: enable the requests below when ready
       // alertEval: fetch(`/api/detection-job/eval/filter/${id}?start=${startDate}&end=${endDate}`).then(checkStatus),
       // projected: fetch(`/eval/projected/${id}`).then(checkStatus),
@@ -282,6 +285,8 @@ export default Ember.Route.extend({
       anomalyDataUrl,
       anomalyMetrics,
       alertEvalMetrics,
+      allConfigGroups,
+      allAppNames,
       anomalies
     } = model;
 
@@ -415,6 +420,8 @@ export default Ember.Route.extend({
       loadError,
       alertId: id,
       alertStats,
+      allConfigGroups,
+      allAppNames,
       metricDataUrl,
       totalAnomalies,
       anomalyDataUrl,
