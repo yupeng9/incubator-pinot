@@ -6,7 +6,7 @@
 import Ember from 'ember';
 import fetch from 'fetch';
 import RSVP from 'rsvp';
-import { checkStatus, pluralizeTime, buildDateEod, parseProps, postProps } from 'thirdeye-frontend/helpers/utils';
+import { checkStatus, buildDateEod } from 'thirdeye-frontend/helpers/utils';
 
 /**
  * If true, this reduces the list of alerts per app to 2 for a quick demo.
@@ -255,20 +255,5 @@ export default Ember.Route.extend({
       .catch((err) => {
         controller.set('isDataLoadingError', true);
       });
-  },
-
-  /**
-   * Model hook for the create alert route.
-   * @method resetController
-   * @param {Object} controller - active controller
-   * @param {Boolean} isExiting - exit status
-   * @param {Object} transition - transition obj
-   * @return {undefined}
-   */
-  resetController(controller, isExiting) {
-    this._super(...arguments);
-    if (isExiting) {
-      controller.clearAll();
-    }
   }
 });
