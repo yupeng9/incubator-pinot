@@ -123,10 +123,11 @@ const standardDeviation = (values) => {
  * @param {Number} subset - the target subset (true anomalies, false, etc)
  * @returns {Number} a percentage
  */
-const calculateRate = (anomalies, subset) => {
+const calculateRate = (anomalies, subsetA, subsetB = { tot: 0 }) => {
   let percentage = 0;
-  if (anomalies && anomalies.tot && subset && subset.tot) {
-    percentage = (subset.tot * 100) / anomalies.tot;
+  debugger;
+  if (anomalies && anomalies.tot && subsetA && subsetA.tot && subsetB && subsetB.tot) {
+    percentage = (subsetA.tot + subsetB.tot) * 100 / anomalies.tot;
   }
   return Number(percentage.toFixed());
 };
@@ -226,7 +227,7 @@ export default Ember.Route.extend({
 
           // Make custom calculations
           avgData['responseRate'] = avgData['responseRate'] ? calculateRate(avgData['totalAlerts'], avgData['totalResponses']) : 'N/A';
-          avgData['precision'] = avgData['precision'] ? calculateRate(avgData['totalAlerts'], avgData['trueAnomalies']) : 'N/A';
+          avgData['precision'] = avgData['precision'] ? calculateRate(avgData['totalAlerts'], avgData['trueAnomalies'], avgData['newTrend']) : 'N/A';
 
           // Add perf data to application groups array
           newGroupArr.push({

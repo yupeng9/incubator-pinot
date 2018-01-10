@@ -225,7 +225,7 @@ export default Route.extend({
         const baselineStart = moment(startStamp).subtract(1, 'week').valueOf();
         const graphEnd = (endStamp < currentEnd) ? endStamp : currentEnd;
         const baselineEnd = moment(graphEnd).subtract(1, 'week');
-        const metricDataUrl =  `/timeseries/compare/${metricId}/${startStamp}/${graphEnd}/` +
+        const metricDataUrl = `/timeseries/compare/${metricId}/${startStamp}/${graphEnd}/` +
           `${baselineStart}/${baselineEnd}?dimension=${dimension}&granularity=` +
           `${bucketSize + '_' + bucketUnit}&filters=${encodeURIComponent(formattedFilters)}&minDate=${baseEnd}&maxDate=${baseStart}`;
 

@@ -9,13 +9,13 @@ import moment from 'moment';
  */
 export function formatEvalMetric(metric, allowDecimal = false) {
   let shown = 'N/A';
-  if (!isNaN(metric)) {
+  if (isFinite(metric)) {
     if (allowDecimal) {
       shown = (Number(metric) === 1 || Number(metric) === 0)
         ? metric * 100
         : (metric * 100).toFixed(1);
     } else {
-      shown = metric;
+      shown = Number.isInteger(metric) ? metric : metric.toFixed(1);
     }
   }
   return shown;
@@ -216,12 +216,10 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
     let newData = alertEvalMetrics.projected[stat.key];
     stat.value = formatEvalMetric(origData);
     stat.projected = formatEvalMetric(newData);
-    if (stat.units) {
-      stat.valueUnits = isNaN(origData) ? null : stat.units;
-      stat.projectedUnits = isNaN(newData) ? null : stat.units;
-      stat.showDirectionIcon = !isNaN(origData) && !isNaN(newData) && origData !== newData;
-      stat.direction = stat.showDirectionIcon && origData > newData ? 'bottom' : 'top';
-    }
+    stat.valueUnits = isNaN(origData) ? null : stat.units;
+    stat.projectedUnits = isNaN(newData) ? null : stat.units;
+    stat.showDirectionIcon = !isNaN(origData) && !isNaN(newData) && origData !== newData;
+    stat.direction = stat.showDirectionIcon && origData > newData ? 'bottom' : 'top';
   });
 
   return anomalyStats;

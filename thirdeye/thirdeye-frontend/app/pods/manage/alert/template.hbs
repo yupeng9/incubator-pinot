@@ -14,8 +14,7 @@
       {{#if (not isReplayPending)}}
         <div class="te-search-results__cta">
           {{#if isOverViewModeActive}}
-            <a class="te-button te-button--link" {{action "onClickEdit"}}>Edit</a>
-            <button {{action "onClickAlertSubscribe"}} class="te-button te-button--outline">Subscribe</button>
+            <button class="te-button te-button--outline" {{action "onClickEdit"}}>Edit</button>
           {{else}}
             <button {{action "onClickNavToOverview"}} class="te-button te-button--outline">Back to overview</button>
           {{/if}}

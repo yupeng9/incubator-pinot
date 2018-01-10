@@ -636,7 +636,7 @@ body {
 
     &--solo {
       color: app-shade(black, 9);
-      width: 130px;
+      width: 117px;
     }
   }
 
@@ -649,6 +649,8 @@ body {
 
   &__value-solo {
     color: app-shade(black, 5);
+    word-wrap: break-word;
+    max-width: 340px;
   }
 
   &__title-group {

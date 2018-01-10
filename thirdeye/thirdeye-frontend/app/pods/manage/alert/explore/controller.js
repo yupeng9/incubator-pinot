@@ -87,6 +87,8 @@ export default Controller.extend({
       pageSize: 10
     });
 
+    console.log('in controller : ', this.get('metricDataUrl'));
+
     // Start checking for replay to end if an ID was given
     if (this.get('isReplayPending')) {
       Ember.run.later(() => {
@@ -303,6 +305,19 @@ export default Controller.extend({
   ),
 
   /**
+   * Find the active baseline option name
+   * @type {String}
+   */
+  baselineTitle: computed(
+    'baselineOptions',
+    function() {
+      const activeOpName = this.get('baselineOptions').filter(item => item.isActive).pop().name;
+      const displayName = (activeOpName !== 'Predicted') ? `Current/${activeOpName}` : activeOpName;
+      return displayName;
+    }
+  ),
+
+  /**
    * Generate date range selection options if needed
    * @method renderDate
    * @param {Number} range - number of days (duration)
@@ -364,6 +379,7 @@ export default Controller.extend({
    * @return {Promise}
    */
   fetchDeferredAnomalyData() {
+    const metricsUrl = this.get('metricDataUrl');
     const wowOptions = ['Wow', 'Wo2W', 'Wo3W', 'Wo4W'];
     const { anomalyData, baselineOptions } = this.getProperties('anomalyData', 'baselineOptions');
     const newWowList = wowOptions.map((item) => {
@@ -377,7 +393,8 @@ export default Controller.extend({
         });
         // Display rest of options once data is loaded ('2week', 'Last Week')
         this.set('baselineOptions', [baselineOptions[0], ...newWowList]);
-        return fetch(this.get('metricDataUrl')).then(checkStatus);
+
+        return fetch(metricsUrl).then(checkStatus);
       })
       .then((metricData) => {
         // Display graph once data has loaded
