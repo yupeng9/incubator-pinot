@@ -1,5 +1,33 @@
 <div class="manage-alert-tune">
 
+  <div class="te-pill-selectors">
+    {{!-- Date range selector --}}
+    <div class="te-pill-selectors__label">Showing</div>
+    <ul class="te-alert-page-hzlist">
+      {{#each timeRangeOptions as |range|}}
+        <li class="te-alert-page-hzlist__item {{if range.isActive "te-alert-page-hzlist__item--active"}}" {{action "onRangeOptionClick" range}}>
+          {{range.name}}
+          {{#if (eq range.name "Custom")}}
+            : {{date-range-picker
+              class="te-pill-selectors__range-picker"
+              timePicker=false
+              timePicker24Hour=true
+              timePickerIncrement=timePickerIncrement
+              maxDate=today
+              start=viewRegionStart
+              end=viewRegionEnd
+              ranges=predefinedRanges
+              showCustomRangeLabel=false
+              format=uiDateFormat
+              serverFormat="YYYY-MM-DD HH:mm"
+              applyAction=(action "onRangeSelection")
+            }}
+          {{/if}}
+        </li>
+      {{/each}}
+    </ul>
+  </div>
+
   <div class="te-content-block">
     <fieldset class="te-form__section te-form__section--first te-form__section--slim row">
       <div class="col-xs-12">
@@ -97,34 +125,6 @@
         }}
       </div>
     </fieldset>
-  </div>
-
-  <div class="te-pill-selectors">
-    {{!-- Date range selector --}}
-    <div class="te-pill-selectors__label">Showing</div>
-    <ul class="te-alert-page-hzlist">
-      {{#each timeRangeOptions as |range|}}
-        <li class="te-alert-page-hzlist__item {{if range.isActive "te-alert-page-hzlist__item--active"}}" {{action "onRangeOptionClick" range}}>
-          {{range.name}}
-          {{#if (eq range.name "Custom")}}
-            : {{date-range-picker
-              class="te-pill-selectors__range-picker"
-              timePicker=false
-              timePicker24Hour=true
-              timePickerIncrement=timePickerIncrement
-              maxDate=today
-              start=viewRegionStart
-              end=viewRegionEnd
-              ranges=predefinedRanges
-              showCustomRangeLabel=false
-              format=uiDateFormat
-              serverFormat="YYYY-MM-DD HH:mm"
-              applyAction=(action "onRangeSelection")
-            }}
-          {{/if}}
-        </li>
-      {{/each}}
-    </ul>
   </div>
 
   <div class="te-horizontal-cards te-content-block">

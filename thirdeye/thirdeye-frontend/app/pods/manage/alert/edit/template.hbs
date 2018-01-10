@@ -79,65 +79,6 @@
   </fieldset>
 </main>
 
-<main class="alert-create card-container card-container--padded card-container--inactive te-form">
-  <fieldset class="te-form__section row">
-    <div class="col-xs-12">
-      <legend class="te-form__section-title">Detection Configuration</legend>
-    </div>
-    {{!-- Field: Pattern --}}
-    <div class="form-group col-xs-6">
-      <label for="select-pattern" class="control-label te-label required">Pattern of Interest</label>
-      {{input
-        type="text"
-        id="select-pattern"
-        class="form-control te-input te-input--read-only"
-        value=pattern
-        disabled=true
-      }}
-    </div>
-
-    {{!-- Field: Sensitivity --}}
-    <div class="form-group col-xs-6">
-      <label for="select-sensitivity" class="control-label te-label required">Sensitivity</label>
-      {{input
-        type="text"
-        id="select-sensitivity"
-        class="form-control te-input te-input--read-only"
-        value=sensitivity
-        disabled=true
-      }}
-    </div>
-
-    {{!-- Field: Weekly Effect --}}
-    {{#if (eq granularity 'DAYS')}}
-      <div class="form-group col-xs-6">
-        <label for="select-effect" class="control-label te-label required">
-          Weekly Seasonality
-          <span>
-            <i class="glyphicon glyphicon-question-sign"></i>
-            {{#tooltip-on-element}}
-              Does your metric behave differently depending on the day of the week?
-            {{/tooltip-on-element}}
-          </span>
-        </label>
-        {{#x-toggle
-          value=weeklyEffect
-          classNames="te-toggle te-toggle--form te-toggle--left"
-          theme='ios'
-          showLabels=true
-          name="weeklyEffectToggle"
-          disabled=true
-          as |toggle|}}
-            {{#toggle.label value=weeklyEffect}}
-              <span class="te-label te-label--flush">{{if weeklyEffect 'True' 'False'}}</span>
-            {{/toggle.label}}
-            {{toggle.switch theme='ios' onLabel='diff on' offLabel='diff off'}}
-        {{/x-toggle}}
-      </div>
-    {{/if}}
-  </fieldset>
-</main>
-
 <main class="alert-create card-container card-container--padded te-form">
   <fieldset class="te-form__section row">
     <div class="col-xs-12">

@@ -63,10 +63,11 @@ export default Controller.extend({
       selectedSortMode: '',
       selectedTimeRange: '',
       selectedFilters: JSON.stringify({}),
-      isAlertReady: false,
       openReportModal: false,
       isReplayStarted: true,
+      isAlertReady: false,
       isReplayDone: false,
+      isGraphReady: false,
       isReportSuccess: false,
       isReportFailure: false,
       isPageLoadFailure: false,
@@ -86,8 +87,6 @@ export default Controller.extend({
       currentPage: 1,
       pageSize: 10
     });
-
-    console.log('in controller : ', this.get('metricDataUrl'));
 
     // Start checking for replay to end if an ID was given
     if (this.get('isReplayPending')) {
@@ -379,7 +378,6 @@ export default Controller.extend({
    * @return {Promise}
    */
   fetchDeferredAnomalyData() {
-    const metricsUrl = this.get('metricDataUrl');
     const wowOptions = ['Wow', 'Wo2W', 'Wo3W', 'Wo4W'];
     const { anomalyData, baselineOptions } = this.getProperties('anomalyData', 'baselineOptions');
     const newWowList = wowOptions.map((item) => {
@@ -393,8 +391,7 @@ export default Controller.extend({
         });
         // Display rest of options once data is loaded ('2week', 'Last Week')
         this.set('baselineOptions', [baselineOptions[0], ...newWowList]);
-
-        return fetch(metricsUrl).then(checkStatus);
+        return fetch(this.get('metricDataUrl')).then(checkStatus);
       })
       .then((metricData) => {
         // Display graph once data has loaded
@@ -519,6 +516,23 @@ export default Controller.extend({
      */
     onSelectResolution(selectedObj) {
       this.set('selectedResolution', selectedObj);
+    },
+
+    /**
+     * Enable reaction to dimension toggling in graph legend component
+     * @method onSelection
+     * @return {undefined}
+     */
+    onSelection(selectedDimension) {
+      const { isSelected } = selectedDimension;
+      Ember.set(selectedDimension, 'isSelected', !isSelected);
+    },
+
+    /**
+     * Handles the primary metric selection in the alert creation
+     */
+    onPrimaryMetricToggle() {
+      return;
     },
 
     /**

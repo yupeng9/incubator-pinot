@@ -52,7 +52,7 @@ export function toIdGroups(anomalyIds, bucketSize = 10) {
  */
 export function enhanceAnomalies(rawAnomalies) {
   const newAnomalies = [];
-  const anomaliesPresent = rawAnomalies.length ;
+  const anomaliesPresent = rawAnomalies && rawAnomalies.length;
   // De-dupe raw anomalies, extract only the good stuff (anomalyDetailsList)
   const anomalies = anomaliesPresent ? [].concat(...rawAnomalies.map(data => data.anomalyDetailsList)) : [];
 
@@ -139,7 +139,7 @@ export function setUpTimeRangeOptions(datesKeys, duration) {
   newRangeArr.push(defaultCustomRange);
 
   return newRangeArr;
-}
+};
 
 /**
  * Returns a sample JSON anomaly eval object

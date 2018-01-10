@@ -6,8 +6,8 @@
 import fetch from 'fetch';
 import moment from 'moment';
 import Route from '@ember/routing/route';
-import { checkStatus, postProps, buildDateEod, toIso } from 'thirdeye-frontend/helpers/utils';
-import { enhanceAnomalies, toIdGroups, setUpTimeRangeOptions, evalObj } from 'thirdeye-frontend/helpers/manage-alert-utils';
+import { checkStatus, postProps, parseProps, buildDateEod, toIso } from 'thirdeye-frontend/helpers/utils';
+import { enhanceAnomalies, toIdGroups, setUpTimeRangeOptions, fetchGraphData } from 'thirdeye-frontend/helpers/manage-alert-utils';
 
 /**
  * Shorthand for setting date defaults
@@ -76,6 +76,47 @@ const processRangeParams = (bucketUnit, duration, start, end) => {
   const endStamp = baseEnd.valueOf();
 
   return { startStamp, endStamp, baseStart, baseEnd };
+};
+
+ /**
+ * Fetches the time series data required to display the anomaly detection graph for the current metric.
+ * @method fetchAnomalyGraphData
+ * @param {Object} config - key metric properties to graph
+ * @return {Promise} Returns time-series data for the metric
+ */
+const fetchAnomalyGraphData = (config) => {
+  const {
+    id,
+    dimension,
+    currentStart,
+    currentEnd,
+    baselineStart,
+    baselineEnd,
+    granularity,
+    filters
+  } = config;
+  const url = `/timeseries/compare/${id}/${currentStart}/${currentEnd}/${baselineStart}/${baselineEnd}?dimension=${dimension}&granularity=${granularity}&filters=${encodeURIComponent(filters)}`;
+  return fetch(url).then(checkStatus);
+};
+
+ /**
+ * Builds the graph metric URL from config settings
+ * @param {Object} cfg - settings for current metric graph
+ * @param {String} maxTime - an 'bookend' for this metric's graphable data
+ * @return {String} URL for graph metric API
+ */
+const buildGraphConfig = (cfg, maxTime) => {
+  const currentEnd = moment(maxTime).isValid()
+    ? moment(maxTime).valueOf()
+    : buildDateEod(1, 'day').valueOf();
+  const formattedFilters = JSON.stringify(parseProps(cfg.filters));
+  const baselineStart = moment(cfg.startStamp).subtract(1, 'week').valueOf();
+  const graphEnd = (cfg.endStamp < currentEnd) ? cfg.endStamp : currentEnd;
+  const baselineEnd = moment(graphEnd).subtract(1, 'week');
+
+  return `/timeseries/compare/${cfg.id}/${cfg.startStamp}/${graphEnd}/` +
+    `${baselineStart}/${baselineEnd}?dimension=${cfg.dimension}&granularity=` +
+    `${cfg.bucketSize + '_' + cfg.bucketUnit}&filters=${encodeURIComponent(formattedFilters)}&minDate=${cfg.baseEnd}&maxDate=${cfg.baseStart}`;
 };
 
 /**
@@ -177,6 +218,18 @@ export default Route.extend({
       baseEnd
     } = processRangeParams(bucketUnit, duration, startDate, endDate);
 
+    // Set initial value for metricId for early transition cases
+    const config = {
+      filters,
+      startStamp,
+      endStamp,
+      bucketSize,
+      bucketUnit,
+      baseEnd,
+      baseStart,
+      dimension: exploreDimensions || 'All'
+    };
+
     // Load endpoints for projected metrics
     const qsParams = `start=${baseStart.utc().format(dateFormat)}&end=${baseEnd.utc().format(dateFormat)}&useNotified=true`;
     const tuneParams = `start=${toIso(startDate)}&end=${toIso(endDate)}`;
@@ -193,45 +246,27 @@ export default Route.extend({
       anomalyIds: fetch(anomaliesUrl).then(checkStatus)
     };
 
-    // Set initial value for metricId for early transition cases
-    let metricId = '';
-
     Object.assign(model, { startStamp, endStamp, alertEvalMetrics, anomalyDataUrl, replayId });
 
     return Ember.RSVP.hash(promiseHash)
       .then((data) => {
         const totalAnomalies = data.anomalyIds.length;
-        metricId = data.metricsByName.length ? data.metricsByName.pop().id : '';
         Object.assign(data.projectedEval, { mttd: data.projectedMttd });
         Object.assign(model.alertEvalMetrics, { projected: data.projectedEval });
+        Object.assign(config, { id: data.metricsByName.length ? data.metricsByName.pop().id : '' });
         Object.assign(model, { anomalyIds: data.anomalyIds, totalAnomalies, anomalyDataUrl });
         return fetchCombinedAnomalies(data.anomalyIds);
       })
-
       // Fetch all anomaly data for returned Ids to paginate all from one array
       .then((rawAnomalyData) => {
         Object.assign(model, { rawAnomalyData });
-        return fetch(`/data/maxDataTime/metricId/${metricId}`).then(checkStatus);
+        return fetch(`/data/maxDataTime/metricId/${config.id}`).then(checkStatus);
       })
-
       // Fetch max data time for this metric (prep call for graph data) - how much data can be displayed?
       // Note: In the event of custom date selection, the end date might be less than maxTime
       .then((maxTime) => {
-        const dimension = exploreDimensions || 'All';
-        const currentEnd = moment(maxTime).isValid()
-          ? moment(maxTime).valueOf()
-          : buildDateEod(1, 'day').valueOf();
-        const formattedFilters = JSON.stringify(parseProps(filters));
-        const baselineStart = moment(startStamp).subtract(1, 'week').valueOf();
-        const graphEnd = (endStamp < currentEnd) ? endStamp : currentEnd;
-        const baselineEnd = moment(graphEnd).subtract(1, 'week');
-        const metricDataUrl = `/timeseries/compare/${metricId}/${startStamp}/${graphEnd}/` +
-          `${baselineStart}/${baselineEnd}?dimension=${dimension}&granularity=` +
-          `${bucketSize + '_' + bucketUnit}&filters=${encodeURIComponent(formattedFilters)}&minDate=${baseEnd}&maxDate=${baseStart}`;
-
-        Object.assign(model, { maxTime, metricDataUrl });
+        Object.assign(model, { metricDataUrl: buildGraphConfig(config, maxTime) });
       })
-
       // Got errors?
       .catch((err) => {
         Object.assign(model, { loadError: true, loadErrorMsg: err });
@@ -316,7 +351,6 @@ export default Route.extend({
       alertEvalMetrics,
       activeRangeStart: startStamp,
       activeRangeEnd: endStamp,
-      isGraphReady: false,
       isReplayPending: Ember.isPresent(model.replayId),
       isReplayStatusError: model.replayId === 'err',
       dimensionOptions: Array.from(new Set(dimensionOptions))
