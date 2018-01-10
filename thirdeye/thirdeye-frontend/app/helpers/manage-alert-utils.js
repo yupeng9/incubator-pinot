@@ -4,19 +4,14 @@ import moment from 'moment';
 /**
  * Handles types and defaults returned from eval/projected endpoints
  * @param {Number|String} metric - number or string like 'NaN', 'Infinity'
- * @param {Boolean} allowDecimal - should this metric be shown as whole number?
  * @returns {Object}
  */
-export function formatEvalMetric(metric, allowDecimal = false) {
-  let shown = 'N/A';
+export function formatEvalMetric(metric) {
+  let shown = (metric === 'Infinite') ? metric : 'N/A';
   if (isFinite(metric)) {
-    if (allowDecimal) {
-      shown = (Number(metric) === 1 || Number(metric) === 0)
-        ? metric * 100
-        : (metric * 100).toFixed(1);
-    } else {
-      shown = Number.isInteger(metric) ? metric : metric.toFixed(1);
-    }
+    shown = (Number(metric) === 1 || Number(metric) === 0)
+      ? metric * 100
+      : (metric * 100).toFixed(1);
   }
   return shown;
 }
@@ -214,8 +209,9 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
   anomalyStats.forEach((stat) => {
     let origData = alertEvalMetrics.evalData[stat.key];
     let newData = alertEvalMetrics.projected[stat.key];
-    stat.value = formatEvalMetric(origData);
-    stat.projected = formatEvalMetric(newData);
+    let isTotal = stat.key === 'totalAlerts';
+    stat.value = isTotal ? origData : formatEvalMetric(origData);
+    stat.projected = isTotal ? newData : formatEvalMetric(newData);
     stat.valueUnits = isNaN(origData) ? null : stat.units;
     stat.projectedUnits = isNaN(newData) ? null : stat.units;
     stat.showDirectionIcon = !isNaN(origData) && !isNaN(newData) && origData !== newData;
