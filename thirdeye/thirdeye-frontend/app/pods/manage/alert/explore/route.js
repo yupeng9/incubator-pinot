@@ -105,18 +105,24 @@ const fetchAnomalyGraphData = (config) => {
  * @param {String} maxTime - an 'bookend' for this metric's graphable data
  * @return {String} URL for graph metric API
  */
-const buildGraphConfig = (cfg, maxTime) => {
+const buildGraphConfig = (config, maxTime) => {
   const currentEnd = moment(maxTime).isValid()
     ? moment(maxTime).valueOf()
     : buildDateEod(1, 'day').valueOf();
-  const formattedFilters = JSON.stringify(parseProps(cfg.filters));
-  const baselineStart = moment(cfg.startStamp).subtract(1, 'week').valueOf();
-  const graphEnd = (cfg.endStamp < currentEnd) ? cfg.endStamp : currentEnd;
+  const formattedFilters = encodeURIComponent(JSON.stringify(parseProps(config.filters)));
+  const baselineStart = moment(config.startStamp).subtract(1, 'week').valueOf();
+  const graphEnd = (config.endStamp < currentEnd) ? config.endStamp : currentEnd;
   const baselineEnd = moment(graphEnd).subtract(1, 'week');
 
-  return `/timeseries/compare/${cfg.id}/${cfg.startStamp}/${graphEnd}/` +
-    `${baselineStart}/${baselineEnd}?dimension=${cfg.dimension}&granularity=` +
-    `${cfg.bucketSize + '_' + cfg.bucketUnit}&filters=${encodeURIComponent(formattedFilters)}&minDate=${cfg.baseEnd}&maxDate=${cfg.baseStart}`;
+  const metricDataUrl = `/timeseries/compare/${config.id}/${config.startStamp}/${graphEnd}/${baselineStart}/` +
+    `${baselineEnd}?dimension=${config.dimension}&granularity=${config.bucketSize}_${config.bucketUnit}&filters=` +
+    `${formattedFilters}&minDate=${config.baseEnd}&maxDate=${config.baseStart}`;
+
+  const topDimensionsUrl = `/rootcause/query?framework=relatedDimensions&anomalyStart=${config.startStamp}` +
+    `&anomalyEnd=${graphEnd}&baselineStart=${config.startStamp}&baselineEnd=${graphEnd}&analysisStart=` +
+    `${config.startStamp}&analysisEnd=${graphEnd}&urns=thirdeye:metric:${config.id}&filters=${formattedFilters}`;
+
+  return { metricDataUrl, topDimensionsUrl };
 };
 
 /**
@@ -266,7 +272,8 @@ export default Route.extend({
       // Fetch max data time for this metric (prep call for graph data) - how much data can be displayed?
       // Note: In the event of custom date selection, the end date might be less than maxTime
       .then((maxTime) => {
-        Object.assign(model, { metricDataUrl: buildGraphConfig(config, maxTime) });
+        const { metricDataUrl, topDimensionsUrl } = buildGraphConfig(config, maxTime);
+        Object.assign(model, { metricDataUrl, topDimensionsUrl });
       })
       // Got errors?
       .catch((err) => {

@@ -9,19 +9,19 @@
             {{range.name}}
             {{#if (eq range.name "Custom")}}
               : {{date-range-picker
-                class="te-pill-selectors__range-picker"
-                timePicker=false
-                timePicker24Hour=true
-                timePickerIncrement=timePickerIncrement
-                maxDate=maxTime
-                start=viewRegionStart
-                end=viewRegionEnd
-                ranges=predefinedRanges
-                showCustomRangeLabel=false
-                format=uiDateFormat
-                serverFormat="YYYY-MM-DD HH:mm"
-                applyAction=(action "onRangeSelection")
-              }}
+                  class="te-pill-selectors__range-picker"
+                  timePicker=false
+                  timePicker24Hour=true
+                  timePickerIncrement=timePickerIncrement
+                  maxDate=maxTime
+                  start=viewRegionStart
+                  end=viewRegionEnd
+                  ranges=predefinedRanges
+                  showCustomRangeLabel=false
+                  format=uiDateFormat
+                  serverFormat="YYYY-MM-DD HH:mm"
+                  applyAction=(action "onRangeSelection")
+                }}
             {{/if}}
           </li>
         {{/each}}
@@ -33,57 +33,10 @@
       <a class="te-pill-selectors__side-link" {{action "onClickTuneSensitivity" this}}>Customize sensitivity</a>
       <div class="te-horizontal-cards__container">
         {{!-- Alert anomaly stats cards --}}
-        {{#each anomalyStats as |card|}}
-          <ul class="te-horizontal-cards__card">
-
-            <li class="te-horizontal-cards">
-              <div class="te-horizontal-cards__card-title">{{card.title}}</div>
-              {{#if card.tooltip}}
-                <div class="te-horizontal-cards__card-tooltip">
-                  <span>
-                    <i class="glyphicon glyphicon-question-sign"></i>
-                    {{#tooltip-on-element}}{{card.text}}{{/tooltip-on-element}}
-                  </span>
-                </div>
-              {{else}}
-                <div class="te-horizontal-cards__card-text">{{card.text}}</div>
-              {{/if}}
-            </li>
-
-            <li class="te-horizontal-cards__card-value">
-              <div class="te-horizontal-cards__val-group">
-                {{#if isTunePreviewActive}}
-                  <div class="te-horizontal-cards__card-subt">Current</div>
-                {{/if}}
-                <div class="te-horizontal-cards__card-number">
-                  {{card.value}}
-                  {{#if card.valueUnits}}
-                    <span class="te-horizontal-cards__card-units">{{card.valueUnits}}</span>
-                  {{/if}}
-                </div>
-              </div>
-              {{#if isTunePreviewActive}}
-                <div class="te-horizontal-cards__val-group">
-                  <i class="te-horizontal-cards__val-glyph--middle glyphicon glyphicon-menu-right"></i>
-                </div>
-                <div class="te-horizontal-cards__val-group">
-                  <div class="te-horizontal-cards__card-subt">New</div>
-                  <div class="te-horizontal-cards__card-number">
-                    {{#if card.showDirectionIcon}}
-                      <i class="te-horizontal-cards__val-glyph--right glyphicon glyphicon-triangle-{{card.direction}}"></i>
-                    {{/if}}
-                    {{card.projected}}
-                    {{#if card.projectedUnits}}
-                      <span class="te-horizontal-cards__card-units">{{card.projectedUnits}}</span>
-                    {{/if}}
-                  </div>
-                </div>
-              {{/if}}
-            </li>
-
-          </ul>
-        {{/each}}
-
+        {{anomaly-stats-block
+          isTunePreviewActive=isTunePreviewActive
+          anomalyStats=anomalyStats
+        }}
       </div>
     </div>
 
@@ -164,6 +117,23 @@
               showGraphLegend=false
               height=400
             }}
+
+    {{!--  {{anomaly-graph
+              primaryMetric=metricData
+              selectedDimensions=selectedDimensions
+              dimensions=topDimensions
+              showDimensions=true
+              isLoading=loading
+              showSubchart=true
+              showLegend=true
+              enableZoom=true
+              componentId='create-alert'
+              showGraphLegend=false
+              onSelection=(action "onSelection")
+              onPrimaryMetricToggle=(action "onPrimaryMetricToggle")
+              height=400
+            }} --}}
+
           {{else}}
              <div class="te-graph-alert__content">
               <div class="glyphicon glyphicon-equalizer}} te-graph-alert__icon"></div>

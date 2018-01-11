@@ -8,7 +8,7 @@ import moment from 'moment';
 import Controller from '@ember/controller';
 import { computed } from '@ember/object';
 import { checkStatus, postProps, buildDateEod } from 'thirdeye-frontend/helpers/utils';
-import { buildAnomalyStats } from 'thirdeye-frontend/helpers/manage-alert-utils';
+import { buildAnomalyStats, getTopDimensions } from 'thirdeye-frontend/helpers/manage-alert-utils';
 
 export default Controller.extend({
   /**
@@ -378,11 +378,17 @@ export default Controller.extend({
    * @return {Promise}
    */
   fetchDeferredAnomalyData() {
+    const dimensionSize = 5;
     const wowOptions = ['Wow', 'Wo2W', 'Wo3W', 'Wo4W'];
-    const { anomalyData, baselineOptions } = this.getProperties('anomalyData', 'baselineOptions');
     const newWowList = wowOptions.map((item) => {
       return { name: item, isActive: false };
     });
+    const {
+      anomalyData,
+      baselineOptions,
+      selectedDimension,
+      topDimensionsUrl
+    } = this.getProperties('anomalyData', 'baselineOptions', 'selectedDimension', 'topDimensionsUrl');
 
     return this.fetchCombinedAnomalyChangeData()
       .then((wowData) => {
@@ -394,12 +400,19 @@ export default Controller.extend({
         return fetch(this.get('metricDataUrl')).then(checkStatus);
       })
       .then((metricData) => {
+        const subD = metricData.subDimensionContributionMap;
         // Display graph once data has loaded
         this.setProperties({
           isGraphReady: true,
           isMetricDataLoading: false,
           metricData
         });
+        console.log(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
+        return getTopDimensions(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
+      })
+      .then((topDimensions) => {
+        console.log('topDimensions : ', topDimensions);
+        this.set('topDimensions', topDimensions);
       })
       .catch((errors) => {
         this.setProperties({

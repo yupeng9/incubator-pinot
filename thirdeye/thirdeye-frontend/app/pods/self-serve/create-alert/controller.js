@@ -7,8 +7,8 @@ import fetch from 'fetch';
 import Ember from 'ember';
 import moment from 'moment';
 import _ from 'lodash';
-import { checkStatus, buildDateEod } from 'thirdeye-frontend/helpers/utils';
 import { task, timeout } from 'ember-concurrency';
+import { checkStatus, buildDateEod } from 'thirdeye-frontend/helpers/utils';
 
 export default Ember.Controller.extend({
 
@@ -449,7 +449,7 @@ export default Ember.Controller.extend({
           topDimensions = filteredDimensions.sortBy('score').reverse().slice(0, maxSize);
           topDimensionLabels = [...new Set(topDimensions.map(key => key.label.split('=')[1]))];
           // Build the array of subdimension objects for the selected dimension
-          for(let subDimension of topDimensionLabels){
+          for (let subDimension of topDimensionLabels){
             if (subDimension && dimensionObj[subDimension]) {
               dimensionList.push({
                 name: subDimension,

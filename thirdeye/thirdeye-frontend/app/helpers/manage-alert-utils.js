@@ -4,14 +4,19 @@ import moment from 'moment';
 /**
  * Handles types and defaults returned from eval/projected endpoints
  * @param {Number|String} metric - number or string like 'NaN', 'Infinity'
+ * @param {Boolean} isPercentage - shall we treat this as a % or a whole number?
  * @returns {Object}
  */
-export function formatEvalMetric(metric) {
+export function formatEvalMetric(metric, isPercentage = false) {
   let shown = (metric === 'Infinity') ? metric : 'N/A';
   if (isFinite(metric)) {
-    shown = (Number(metric) === 1 || Number(metric) === 0)
+    if (isPercentage) {
+    shown = (Number(metric) % 1 === 0)
       ? metric * 100
       : (metric * 100).toFixed(1);
+    } else {
+      shown = metric;
+    }
   }
   return shown;
 }
@@ -134,7 +139,7 @@ export function setUpTimeRangeOptions(datesKeys, duration) {
   newRangeArr.push(defaultCustomRange);
 
   return newRangeArr;
-};
+}
 
 /**
  * Returns a sample JSON anomaly eval object
@@ -154,6 +159,54 @@ export function evalObj() {
     weightedPrecision: 0.0
   };
 }
+
+  /**
+   * If a dimension has been selected, the metric data object will contain subdimensions.
+   * This method calls for dimension ranking by metric, filters for the selected dimension,
+   * and returns a sorted list of graph-ready dimension objects.
+   * @method getTopDimensions
+   * @param {Object} dimensionObj - the object containing available subdimension for current metric
+   * @param {String} dimensionUrl - the URL for the related dimensions call
+   * @param {Number} maxSize - number of sub-dimensions to display on graph
+   * @param {String} selectedDimension - the user-selected dimension to graph
+   * @return {RSVP Promise}
+   */
+  export function getTopDimensions(dimensionObj = {}, dimensionUrl, maxSize, selectedDimension) {
+    const colors = ['orange', 'teal', 'purple', 'red', 'green', 'pink'];
+    let dimensionList = [];
+    let topDimensions = [];
+    let topDimensionLabels = [];
+    let filteredDimensions = [];
+    let colorIndex = 0;
+
+    return new Ember.RSVP.Promise((resolve) => {
+      fetch(dimensionUrl).then(checkStatus)
+        .then((scoredDimensions) => {
+          // Select scored dimensions belonging the selected one
+          filteredDimensions =  _.filter(scoredDimensions, function(dimension) {
+            return dimension.label.split('=')[0] === selectedDimension;
+          });
+          // Prep a sorted list of labels for our dimension's top contributing sub-dimensions
+          topDimensions = filteredDimensions.sortBy('score').reverse().slice(0, maxSize);
+          topDimensionLabels = [...new Set(topDimensions.map(key => key.label.split('=')[1]))];
+          // Build the array of subdimension objects for the selected dimension
+          for (let subDimension of topDimensionLabels){
+            if (subDimension && dimensionObj[subDimension]) {
+              dimensionList.push({
+                name: subDimension,
+                color: colors[colorIndex],
+                baselineValues: dimensionObj[subDimension].baselineValues,
+                currentValues: dimensionObj[subDimension].currentValues,
+                isSelected: true
+              });
+              colorIndex++;
+            }
+          }
+          // Return sorted list of dimension objects
+          resolve(dimensionList);
+        });
+    });
+  }
 
 /**
  * Data needed to render the stats 'cards' above the anomaly graph for a given alert
@@ -209,11 +262,12 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
   anomalyStats.forEach((stat) => {
     let origData = alertEvalMetrics.evalData[stat.key];
     let newData = alertEvalMetrics.projected[stat.key];
+    let isPercentageMetric = stat.units === '%';
     // TODO: keeping this useful log during pre-launch iterations
     console.log('key : ', stat.key, ' orig : ', origData, ' new : ', newData);
     let isTotal = stat.key === 'totalAlerts';
-    stat.value = isTotal ? origData : formatEvalMetric(origData);
-    stat.projected = isTotal ? newData : formatEvalMetric(newData);
+    stat.value = isTotal ? origData : formatEvalMetric(origData, isPercentageMetric);
+    stat.projected = isTotal ? newData : formatEvalMetric(newData, isPercentageMetric);
     stat.valueUnits = isFinite(origData) ? stat.units : null;
     stat.projectedUnits = isFinite(newData) ? stat.units : null;
     stat.showDirectionIcon = isFinite(origData) && isFinite(newData) && origData !== newData;
