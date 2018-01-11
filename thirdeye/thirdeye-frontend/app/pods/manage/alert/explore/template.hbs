@@ -50,25 +50,40 @@
               {{/if}}
             </li>
 
-            <li class="te-horizontal-cards__card-value te-horizontal-cards__card-value--tight">
+            <li class="te-horizontal-cards__card-value">
               <div class="te-horizontal-cards__val-group">
+                {{#if isTunePreviewActive}}
+                  <div class="te-horizontal-cards__card-subt">Current</div>
+                {{/if}}
                 <div class="te-horizontal-cards__card-number">
                   {{card.value}}
-                  {{#if (and card.units (not-eq card.value "N/A"))}}
-                    <span class="te-horizontal-cards__card-units">{{card.units}}</span>
-                  {{/if}}
-                </div>
-                <div class="te-horizontal-cards__card-subt {{if (eq card.projected "none") "te-horizontal-cards__card-subt--hide"}}">Projected:
-                  <strong>{{card.projected}}</strong>
-                  {{#if (and card.units (not-eq card.projected "N/A"))}}
-                    <span class="te-horizontal-cards__card-units--small">{{card.units}}</span>
+                  {{#if card.valueUnits}}
+                    <span class="te-horizontal-cards__card-units">{{card.valueUnits}}</span>
                   {{/if}}
                 </div>
               </div>
+              {{#if isTunePreviewActive}}
+                <div class="te-horizontal-cards__val-group">
+                  <i class="te-horizontal-cards__val-glyph--middle glyphicon glyphicon-menu-right"></i>
+                </div>
+                <div class="te-horizontal-cards__val-group">
+                  <div class="te-horizontal-cards__card-subt">New</div>
+                  <div class="te-horizontal-cards__card-number">
+                    {{#if card.showDirectionIcon}}
+                      <i class="te-horizontal-cards__val-glyph--right glyphicon glyphicon-triangle-{{card.direction}}"></i>
+                    {{/if}}
+                    {{card.projected}}
+                    {{#if card.projectedUnits}}
+                      <span class="te-horizontal-cards__card-units">{{card.projectedUnits}}</span>
+                    {{/if}}
+                  </div>
+                </div>
+              {{/if}}
             </li>
 
           </ul>
         {{/each}}
+
       </div>
     </div>
 

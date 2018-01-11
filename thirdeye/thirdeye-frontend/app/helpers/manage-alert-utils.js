@@ -7,7 +7,7 @@ import moment from 'moment';
  * @returns {Object}
  */
 export function formatEvalMetric(metric) {
-  let shown = (metric === 'Infinite') ? metric : 'N/A';
+  let shown = (metric === 'Infinity') ? metric : 'N/A';
   if (isFinite(metric)) {
     shown = (Number(metric) === 1 || Number(metric) === 0)
       ? metric * 100
@@ -209,12 +209,14 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
   anomalyStats.forEach((stat) => {
     let origData = alertEvalMetrics.evalData[stat.key];
     let newData = alertEvalMetrics.projected[stat.key];
+    // TODO: keeping this useful log during pre-launch iterations
+    console.log('key : ', stat.key, ' orig : ', origData, ' new : ', newData);
     let isTotal = stat.key === 'totalAlerts';
     stat.value = isTotal ? origData : formatEvalMetric(origData);
     stat.projected = isTotal ? newData : formatEvalMetric(newData);
-    stat.valueUnits = isNaN(origData) ? null : stat.units;
-    stat.projectedUnits = isNaN(newData) ? null : stat.units;
-    stat.showDirectionIcon = !isNaN(origData) && !isNaN(newData) && origData !== newData;
+    stat.valueUnits = isFinite(origData) ? stat.units : null;
+    stat.projectedUnits = isFinite(newData) ? stat.units : null;
+    stat.showDirectionIcon = isFinite(origData) && isFinite(newData) && origData !== newData;
     stat.direction = stat.showDirectionIcon && origData > newData ? 'bottom' : 'top';
   });
 

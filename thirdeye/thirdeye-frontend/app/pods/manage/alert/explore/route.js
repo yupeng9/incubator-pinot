@@ -171,6 +171,7 @@ export default Route.extend({
 
     return Ember.RSVP.hash(initialPromiseHash)
       .then((alertEvalMetrics) => {
+        Object.assign(alertEvalMetrics.evalData, { mttd: alertEvalMetrics.mttd});
         return {
           id,
           replayId,

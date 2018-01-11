@@ -161,6 +161,7 @@ export default Route.extend({
 
     return Ember.RSVP.hash(initialPromiseHash)
       .then((alertEvalMetrics) => {
+        Object.assign(alertEvalMetrics.evalData, { mttd: alertEvalMetrics.mttd});
         return {
           id,
           alertData,
@@ -190,6 +191,7 @@ export default Route.extend({
     return Ember.RSVP.hash(tuningPromiseHash(startDate, endDate, alertEvalMetrics.autotuneId, alertId))
       .then((data) => {
         const idsRemoved = anomalyDiff(data.idListA, data.idListB).idsRemoved;
+        Object.assign(data.projectedEval, { mttd: data.projectedMttd });
         Object.assign(model.alertEvalMetrics, { projected: data.projectedEval });
         return fetchCombinedAnomalies(idsRemoved);
       })
