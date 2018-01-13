@@ -151,17 +151,17 @@ export default Route.extend({
     // Prepare endpoints for the initial eval, mttd, projected metrics calls
     const tuneParams = `start=${toIso(startDate)}&end=${toIso(endDate)}`;
     const tuneIdUrl = `/detection-job/autotune/filter/${id}?${tuneParams}`;
-    const evalUrl = `/detection-job/eval/filter/${id}?${tuneParams}`;
+    const evalUrl = `/detection-job/eval/filter/${id}?${tuneParams}&isProjected=TRUE`;
     const mttdUrl = `/detection-job/eval/mttd/${id}`;
     const initialPromiseHash = {
-      evalData: fetch(evalUrl).then(checkStatus), // NOTE: ensure API returns JSON
+      current: fetch(evalUrl).then(checkStatus), // NOTE: ensure API returns JSON
       autotuneId: fetch(tuneIdUrl, postProps('')).then(checkStatus),
       mttd: fetch(mttdUrl).then(checkStatus)
     };
 
     return Ember.RSVP.hash(initialPromiseHash)
       .then((alertEvalMetrics) => {
-        Object.assign(alertEvalMetrics.evalData, { mttd: alertEvalMetrics.mttd});
+        Object.assign(alertEvalMetrics.current, { mttd: alertEvalMetrics.mttd});
         return {
           id,
           alertData,

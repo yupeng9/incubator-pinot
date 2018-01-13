@@ -64,6 +64,12 @@ export default Controller.extend({
   isGraphVisible: true, // we will hide it when transitioning to a new route to avoid errors
   isExiting: false, // exit detection
 
+  alertDimension: '',
+  isMetricDataLoading: true,
+  isDimensionFetchDone: false,
+  isMetricDataInvalid: false,
+  graphMessageText: 'Loading graph...',
+
   /**
    * Returns the list of existing config groups and updates it if a new one is added.
    * @method allAlertsConfigGroups
@@ -84,6 +90,18 @@ export default Controller.extend({
   ),
 
   /**
+   * All selected dimensions to be loaded into graph
+   * @returns {Array}
+   */
+  selectedDimensions: computed(
+    'topDimensions',
+    'topDimensions.@each.isSelected',
+    function() {
+      return this.get('topDimensions').filterBy('isSelected');
+    }
+  ),
+
+  /**
    * If a dimension has been selected, the metric data object will contain subdimensions.
    * This method calls for dimension ranking by metric, filters for the selected dimension,
    * and returns a sorted list of graph-ready dimension objects.
@@ -99,28 +117,31 @@ export default Controller.extend({
       const selectedDimension = this.get('alertDimension');
       const scoredDimensions = this.get('metricDimensions');
       const colors = ['orange', 'teal', 'purple', 'red', 'green', 'pink'];
-      const dimensionObj = this.get('metricData.subDimensionContributionMap') || {};
-      const filteredDimensions =  _.filter(scoredDimensions, (dimension) => {
-        return dimension.label.split('=')[0] === selectedDimension;
-      });
-      const topDimensions = filteredDimensions.sortBy('score').reverse().slice(0, maxSize);
-      const topDimensionLabels = [...new Set(topDimensions.map(key => key.label.split('=')[1]))];
       let dimensionList = [];
       let colorIndex = 0;
 
-      // Build the array of subdimension objects for the selected dimension
-      topDimensionLabels.forEach((subDimension) => {
-        if (dimensionObj[subDimension] && subDimension !== '') {
-          dimensionList.push({
-            name: subDimension,
-            metricName: subDimension,
-            color: colors[colorIndex],
-            baselineValues: dimensionObj[subDimension].baselineValues,
-            currentValues: dimensionObj[subDimension].currentValues
-          });
-          colorIndex++;
-        }
-      });
+      if (selectedDimension) {
+        const dimensionObj = this.get('metricData.subDimensionContributionMap') || {};
+        const filteredDimensions =  _.filter(scoredDimensions, (dimension) => {
+          return dimension.label.split('=')[0] === selectedDimension;
+        });
+        const topDimensions = filteredDimensions.sortBy('score').reverse().slice(0, maxSize);
+        const topDimensionLabels = [...new Set(topDimensions.map(key => key.label.split('=')[1]))];
+
+        // Build the array of subdimension objects for the selected dimension
+        topDimensionLabels.forEach((subDimension) => {
+          if (dimensionObj[subDimension] && subDimension !== '') {
+            dimensionList.push({
+              name: subDimension,
+              metricName: subDimension,
+              color: colors[colorIndex],
+              baselineValues: dimensionObj[subDimension].baselineValues,
+              currentValues: dimensionObj[subDimension].currentValues
+            });
+            colorIndex++;
+          }
+        });
+      }
 
       // Return sorted list of dimension objects
       return dimensionList;
@@ -361,7 +382,7 @@ export default Controller.extend({
       newConfigGroupName: null,
       updatedRecipients: [],
       metricData: null,
-      alertDimension: null,
+      alertDimension: '',
       metricDimensions: null,
       metricName: null,
       granularity: null,
@@ -400,6 +421,24 @@ export default Controller.extend({
         }
         this.set('isAlertNameDuplicate', isDuplicateName);
       });
+    },
+
+    /**
+     * Enable reaction to dimension toggling in graph legend component
+     * @method onSelection
+     * @return {undefined}
+     */
+    onSelection(selectedDimension) {
+      console.log(selectedDimension);
+        const { isSelected } = selectedDimension;
+        Ember.set(selectedDimension, 'isSelected', !isSelected);
+    },
+
+    /**
+     * Handles the primary metric selection in the alert creation
+     */
+    onPrimaryMetricToggle() {
+      return;
     },
 
     /**

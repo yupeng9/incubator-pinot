@@ -407,12 +407,12 @@ export default Controller.extend({
           isMetricDataLoading: false,
           metricData
         });
-        console.log(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
+/*        console.log(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
         return getTopDimensions(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
       })
       .then((topDimensions) => {
         console.log('topDimensions : ', topDimensions);
-        this.set('topDimensions', topDimensions);
+        this.set('topDimensions', topDimensions);*/
       })
       .catch((errors) => {
         this.setProperties({

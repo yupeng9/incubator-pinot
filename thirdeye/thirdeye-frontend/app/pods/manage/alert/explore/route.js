@@ -172,12 +172,15 @@ export default Route.extend({
     const initialPromiseHash = {
       evalData: fetch(evalUrl).then(checkStatus), // NOTE: ensure API returns JSON
       autotuneId: fetch(tuneUrl, postProps('')).then(checkStatus),
+      current: fetch(`${evalUrl}&isProjected=FALSE`).then(checkStatus),
+      projected: fetch(`${evalUrl}&isProjected=TRUE`).then(checkStatus),
       mttd: fetch(mttdUrl).then(checkStatus)
     };
 
     return Ember.RSVP.hash(initialPromiseHash)
       .then((alertEvalMetrics) => {
         Object.assign(alertEvalMetrics.evalData, { mttd: alertEvalMetrics.mttd});
+        Object.assign(alertEvalMetrics.current, { mttd: alertEvalMetrics.mttd});
         return {
           id,
           replayId,
@@ -259,7 +262,7 @@ export default Route.extend({
       .then((data) => {
         const totalAnomalies = data.anomalyIds.length;
         Object.assign(data.projectedEval, { mttd: data.projectedMttd });
-        Object.assign(model.alertEvalMetrics, { projected: data.projectedEval });
+        //Object.assign(model.alertEvalMetrics, { projected: data.projectedEval });
         Object.assign(config, { id: data.metricsByName.length ? data.metricsByName.pop().id : '' });
         Object.assign(model, { anomalyIds: data.anomalyIds, totalAnomalies, anomalyDataUrl });
         return fetchCombinedAnomalies(data.anomalyIds);

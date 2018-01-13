@@ -222,6 +222,7 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
     key: 'responseRate',
     units: '%',
     tooltip,
+    hideProjected: true,
     text: '% of anomalies that are reviewed.'
   };
 
@@ -230,7 +231,7 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
       title: 'Number of anomalies',
       key: 'totalAlerts',
       text: 'Estimated average number of anomalies',
-      tooltip
+      tooltip,
     },
     {
       title: 'Precision',
@@ -260,12 +261,13 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
   }
 
   anomalyStats.forEach((stat) => {
-    let origData = alertEvalMetrics.evalData[stat.key];
+    let origData = alertEvalMetrics.current[stat.key];
     let newData = alertEvalMetrics.projected[stat.key];
     let isPercentageMetric = stat.units === '%';
     // TODO: keeping this useful log during pre-launch iterations
     console.log('key : ', stat.key, ' orig : ', origData, ' new : ', newData);
     let isTotal = stat.key === 'totalAlerts';
+    stat.showProjected = mode === 'explore';
     stat.value = isTotal ? origData : formatEvalMetric(origData, isPercentageMetric);
     stat.projected = isTotal ? newData : formatEvalMetric(newData, isPercentageMetric);
     stat.valueUnits = isFinite(origData) ? stat.units : null;
