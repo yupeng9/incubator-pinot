@@ -7,6 +7,7 @@ import fetch from 'fetch';
 import Ember from 'ember';
 import moment from 'moment';
 import _ from 'lodash';
+import { computed } from '@ember/object';
 import { task, timeout } from 'ember-concurrency';
 import { checkStatus, buildDateEod } from 'thirdeye-frontend/helpers/utils';
 
@@ -40,8 +41,11 @@ export default Ember.Controller.extend({
   topDimensions: [],
   originalDimensions: [],
   bsAlertBannerType: 'success',
+  customPercentChange: '30',
+  customMttdChange: '5',
   graphEmailLinkProps: '',
   replayStatusClass: 'te-form__banner--pending',
+  selectedSeverityOption: 'Percentage of Change',
   legendText: {
     dotted: {
       text: 'WoW'
@@ -121,14 +125,58 @@ export default Ember.Controller.extend({
       'Robust (Low)': 'LOW',
       'Medium': 'MEDIUM',
       'Sensitive (High)': 'HIGH'
+    },
+    severity: {
+      'Percentage of Change': 'weight',
+      'Absolute Value of Change': 'deviation',
+      'Site Wide Impact': 'site_wide_impact'
     }
   },
+
+  /**
+   * Severity display options (power-select) and values
+   */
+  tuneSeverityOptions: computed(
+    'optionMap.severity',
+    function() {
+      const severityOptions = Object.keys(this.get('optionMap.severity'));
+      return severityOptions;
+    }
+  ),
+
+  /**
+   * Builds the new autotune filter from custom tuning options
+   * @type {String}
+   */
+  alertFilterObj: computed(
+    'selectedSeverityOption',
+    'customPercentChange',
+    'customMttdChange',
+    'selectedPattern',
+    function() {
+      const severityMap = this.get('optionMap.severity');
+      const patternMap = this.get('optionMap.pattern');
+      const selectedPattern = this.get('selectedPattern');
+      const selectedSeverity = this.get('selectedSeverityOption');
+      const mttdVal = Number(this.get('customMttdChange')).toFixed(2);
+      const severityThresholdVal = (Number(this.get('customPercentChange'))/100).toFixed(2);
+      const featureString = `window_size_in_hour,${severityMap[selectedSeverity]}`;
+      const mttdString = `window_size_in_hour=${mttdVal};${severityMap[selectedSeverity]}=${severityThresholdVal}`;
+      const patternString = patternMap[selectedPattern] ? `&pattern=${encodeURIComponent(patternMap[selectedPattern])}` : '';
+      const finalStr = `&features=${encodeURIComponent(featureString)}&mttd=${encodeURIComponent(mttdString)}${patternString}`;
+      return {
+        features: featureString,
+        mttd: mttdString,
+        pattern: patternString
+      };
+    }
+  ),
 
   /**
    * All selected dimensions to be loaded into graph
    * @returns {Array}
    */
-  selectedDimensions: Ember.computed(
+  selectedDimensions: computed(
     'topDimensions',
     'topDimensions.@each.isSelected',
     function() {
@@ -140,7 +188,7 @@ export default Ember.Controller.extend({
    * Setting default sensitivity if selectedSensitivity is undefined
    * @returns {String}
    */
-  sensitivityWithDefault: Ember.computed(
+  sensitivityWithDefault: computed(
     'selectedSensitivity',
     'selectedGranularity',
     function() {
@@ -577,7 +625,7 @@ export default Ember.Controller.extend({
    * @method isAlertGroupEditModeActive
    * @return {Boolean}
    */
-  isAlertGroupEditModeActive: Ember.computed(
+  isAlertGroupEditModeActive: computed(
     'selectedConfigGroup',
     'newConfigGroupName',
     function() {
@@ -590,7 +638,7 @@ export default Ember.Controller.extend({
    * @method isFilterSelectDisabled
    * @return {Boolean}
    */
-  isFilterSelectDisabled: Ember.computed(
+  isFilterSelectDisabled: computed(
     'filters',
     'isMetricSelected',
     function() {
@@ -603,7 +651,7 @@ export default Ember.Controller.extend({
    * @method isGranularitySelectDisabled
    * @return {Boolean}
    */
-  isGranularitySelectDisabled: Ember.computed(
+  isGranularitySelectDisabled: computed(
     'granularities',
     'isMetricSelected',
     function() {
@@ -617,7 +665,7 @@ export default Ember.Controller.extend({
    * @param {Number} metricId - Id of selected metric to graph
    * @return {Boolean} PreventSubmit
    */
-  isSubmitDisabled: Ember.computed(
+  isSubmitDisabled: computed(
     'selectedMetricOption',
     'selectedPattern',
     'selectedWeeklyEffect',
@@ -697,7 +745,7 @@ export default Ember.Controller.extend({
    * @param {Object} selectedMetricOption - the selected metric's properties
    * @return {Object} New function object
    */
-  newAlertProperties: Ember.computed(
+  newAlertProperties: computed(
     'alertFunctionName',
     'selectedMetricOption',
     'selectedDimension',
@@ -783,7 +831,7 @@ export default Ember.Controller.extend({
    * @param {Object} selectedApplication - user-selected application object
    * @return {Array} activeGroups - filtered list of groups that are active
    */
-  filteredConfigGroups: Ember.computed(
+  filteredConfigGroups: computed(
     'selectedApplication',
     function() {
       const appName = this.get('selectedApplication');
@@ -803,7 +851,7 @@ export default Ember.Controller.extend({
    * @method graphMessageText
    * @return {String} the appropriate graph placeholder text
    */
-  graphMessageText: Ember.computed(
+  graphMessageText: computed(
     'isMetricDataInvalid',
     function() {
       const defaultMsg = 'Once a metric is selected, the metric replay graph will show here';
@@ -817,7 +865,7 @@ export default Ember.Controller.extend({
    * @method graphMailtoLink
    * @return {String} the URI-encoded mailto link
    */
-  graphMailtoLink: Ember.computed(
+  graphMailtoLink: computed(
     'selectedMetricOption',
     function() {
       const selectedMetric = this.get('selectedMetricOption');
@@ -835,7 +883,7 @@ export default Ember.Controller.extend({
    * @method selectedConfigGroupSubtitle
    * @return {String} title of expandable section for selected config group
    */
-  selectedConfigGroupSubtitle: Ember.computed(
+  selectedConfigGroupSubtitle: computed(
     'selectedConfigGroup',
     function () {
       return `Alerts Monitored by: ${this.get('selectedConfigGroup.name')}`;
@@ -1187,6 +1235,9 @@ export default Ember.Controller.extend({
 
       // URL encode filters to avoid API issues
       newFunctionObj.filters = encodeURIComponent(newFunctionObj.filters);
+
+      // Add custom filters to alert
+      newFunctionObj.alertFilter = this.get('alertFilterObj');
 
       // First, save our new alert function.
       this.saveThirdEyeFunction(newFunctionObj).then(newFunctionId => {

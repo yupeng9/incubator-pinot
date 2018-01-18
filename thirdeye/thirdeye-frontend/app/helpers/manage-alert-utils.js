@@ -8,14 +8,13 @@ import moment from 'moment';
  * @returns {Object}
  */
 export function formatEvalMetric(metric, isPercentage = false) {
+  const isWhole = Number(metric) % 1 === 0;
   let shown = (metric === 'Infinity') ? metric : 'N/A';
   if (isFinite(metric)) {
     if (isPercentage) {
-    shown = (Number(metric) % 1 === 0)
-      ? metric * 100
-      : (metric * 100).toFixed(1);
+      shown = isWhole ? metric * 100 : (metric * 100).toFixed(1);
     } else {
-      shown = metric;
+      shown = isWhole ? metric : metric.toFixed(1);
     }
   }
   return shown;
@@ -212,7 +211,7 @@ export function getTopDimensions(dimensionObj = {}, scoredDimensions, selectedDi
  * @param {String} mode - the originating route
  * @returns {Array}
  */
-export function buildAnomalyStats(alertEvalMetrics, mode) {
+export function buildAnomalyStats(alertEvalMetrics, mode, severity = '30') {
   const tooltip = false;
 
   const responseRateObj = {
@@ -246,11 +245,11 @@ export function buildAnomalyStats(alertEvalMetrics, mode) {
       text: 'Among all anomalies that happened, the % of them detected by the system.'
     },
     {
-      title: 'MTTD for >30% change',
+      title: `MTTD for > ${severity}% change`,
       key: 'mttd',
-      units: 'hours',
+      units: 'hrs',
       tooltip,
-      text: 'Minimum time to detect for anomalies with > 30% change'
+      text: `Minimum time to detect for anomalies with > ${severity}% change`
     }
   ];
 

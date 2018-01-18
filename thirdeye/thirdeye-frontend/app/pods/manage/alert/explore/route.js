@@ -57,7 +57,6 @@ const anomalyResponseObj = [
  * @returns {Ember.RSVP promise}
  */
 const fetchCombinedAnomalies = (anomalyIds) => {
-  let anomalyPromises = [];
   if (anomalyIds.length) {
     const idGroups = toIdGroups(anomalyIds);
     const anomalyPromiseHash = idGroups.map((group, index) => {
@@ -65,9 +64,10 @@ const fetchCombinedAnomalies = (anomalyIds) => {
       let getAnomalies = fetch(`/anomalies/search/anomalyIds/0/0/${index + 1}?${idStringParams}`).then(checkStatus);
       return Ember.RSVP.resolve(getAnomalies);
     });
-    anomalyPromises = Ember.RSVP.all(anomalyPromiseHash);
+    return Ember.RSVP.all(anomalyPromiseHash);
+  } else {
+    return Ember.RSVP.resolve([]);
   }
-  return anomalyPromises;
 };
 
 /**
@@ -103,27 +103,6 @@ const processRangeParams = (bucketUnit, duration, start, end) => {
   const endStamp = baseEnd.valueOf();
 
   return { startStamp, endStamp, baseStart, baseEnd };
-};
-
- /**
- * Fetches the time series data required to display the anomaly detection graph for the current metric.
- * @method fetchAnomalyGraphData
- * @param {Object} config - key metric properties to graph
- * @return {Promise} Returns time-series data for the metric
- */
-const fetchAnomalyGraphData = (config) => {
-  const {
-    id,
-    exploreDimensions: dimension = 'All',
-    currentStart,
-    currentEnd,
-    baselineStart,
-    baselineEnd,
-    granularity,
-    filters
-  } = config;
-  const url = `/timeseries/compare/${id}/${currentStart}/${currentEnd}/${baselineStart}/${baselineEnd}?dimension=${dimension}&granularity=${granularity}&filters=${encodeURIComponent(filters)}`;
-  return fetch(url).then(checkStatus);
 };
 
  /**

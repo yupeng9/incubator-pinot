@@ -54,6 +54,26 @@
          </li>
       </ul>
 
+      <div class="te-form__indent-block col-xs-8">
+        <span class="te-form__list-label">Anomaly Pattern</span>
+        <div class="te-form__tune-field">
+          {{#power-select
+            triggerId="alert-tune-pattern"
+            triggerClass="te-form__tune-field"
+            verticalPosition="below"
+            renderInPlace=true
+            options=tunePatternOptions
+            searchEnabled=false
+            selected=selectedTunePattern
+            onchange=(action (mut selectedTunePattern))
+            disabled=isCustomFieldsDisabled
+            as |pattern|
+          }}
+            {{pattern}}
+          {{/power-select}}
+        </div>
+      </div>
+
       <div class="te-form__indent-block col-xs-10">
         <span class="te-form__list-label">When</span>
         <div class="te-form__tune-field">
@@ -82,7 +102,9 @@
             disabled=isCustomFieldsDisabled
           }}
         </div>
-        <span class="te-form__list-label--suffix">%, </span>
+        {{#if isTuneAmountPercent}}
+          <span class="te-form__list-label--suffix">%, </span>
+        {{/if}}
         <span class="te-form__list-label">MTTD should be no more than</span>
         <div class="te-form__tune-field te-form__tune-field--amount">
           {{input
@@ -96,25 +118,6 @@
         <span class="te-form__list-label">hours</span>
       </div>
 
-      <div class="te-form__indent-block col-xs-8">
-        <span class="te-form__list-label">Anomaly Pattern</span>
-        <div class="te-form__tune-field">
-          {{#power-select
-            triggerId="alert-tune-pattern"
-            triggerClass="te-form__tune-field"
-            verticalPosition="below"
-            renderInPlace=true
-            options=tunePatternOptions
-            searchEnabled=false
-            selected=selectedTunePattern
-            onchange=(action (mut selectedTunePattern))
-            disabled=isCustomFieldsDisabled
-            as |pattern|
-          }}
-            {{pattern}}
-          {{/power-select}}
-        </div>
-      </div>
       <div class="te-form__cta-row">
         <a class="te-button te-button--link" {{action "onResetPage" preventDefault=false}}>Reset</a>
         {{bs-button
@@ -225,6 +228,7 @@
             <tr class="te-anomaly-table__row">
                <td class="te-anomaly-table__cell">
                 <ul class="te-anomaly-table__list">
+                  <li class="te-anomaly-table__list--shadow">{{anomaly.index}}</li>
                   <li class="te-anomaly-table__list--stronger">{{anomaly.startDateStr}}</li>
                   <li class="te-anomaly-table__list--lighter">{{anomaly.durationStr}}</li>
                 </ul>

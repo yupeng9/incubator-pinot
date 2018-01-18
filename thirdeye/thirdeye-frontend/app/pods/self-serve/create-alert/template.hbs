@@ -123,7 +123,7 @@
       <legend class="te-form__section-title">Detection Configuration</legend>
     </div>
     {{!-- Field: Pattern --}}
-    <div class="form-group col-xs-6">
+    <div class="form-group col-xs-4">
       <label for="select-pattern" class="control-label te-label required">Pattern of Interest *</label>
       {{#power-select
         loadingMessage="Waiting for the server...."
@@ -144,7 +144,7 @@
     </div>
 
     {{!-- Field: Sensitivity --}}
-    <div class="form-group col-xs-6">
+    <div class="form-group col-xs-8">
       <label for="select-sensitivity" class="control-label te-label required">
         Sensitivity (optional)
         <span>
@@ -154,24 +154,47 @@
           {{/tooltip-on-element}}
         </span>
       </label>
-      {{#power-select
-        loadingMessage="Waiting for the server...."
-        triggerId="select-sensitivity"
-        triggerClass="te-form__select"
-        placeholder="Select a sensitivity"
-        loadingMessage="Please select a metric first"
-        options=sensitivityOptions
-        allowClear=true
-        searchEnabled=false
-        selected=selectedSensitivity
-        onchange=(action (mut selectedSensitivity))
-        disabled=(not isMetricSelected)
-        required=true
-        as |sensitivity|
-      }}
-
-        {{sensitivity}}
-      {{/power-select}}
+      <div class="te-form__indent-block--custom">
+        <span class="te-form__list-label">When</span>
+        <div class="te-form__tune-field">
+          {{#power-select
+            triggerId="alert-tune-severity"
+            triggerClass="te-form__tune-field"
+            verticalPosition="below"
+            renderInPlace=true
+            options=tuneSeverityOptions
+            searchEnabled=false
+            selected=selectedSeverityOption
+            onchange=(action (mut selectedSeverityOption))
+            disabled=(not isMetricSelected)
+            as |severity|
+          }}
+            {{severity}}
+          {{/power-select}}
+        </div>
+        <span class="te-form__list-label">is >=</span>
+        <div class="te-form__tune-field te-form__tune-field--amount">
+          {{input
+            type="text"
+            id="custom-tune-percent"
+            class="form-control te-input te-input"
+            value=customPercentChange
+            disabled=(not isMetricSelected)
+          }}
+        </div>
+        <span class="te-form__list-label--suffix">%, </span>
+        <span class="te-form__list-label">MTTD should be no more than</span>
+        <div class="te-form__tune-field te-form__tune-field--amount">
+          {{input
+            type="text"
+            id="custom-tune-mttd"
+            class="form-control te-input"
+            value=customMttdChange
+            disabled=(not isMetricSelected)
+          }}
+        </div>
+        <span class="te-form__list-label">hours</span>
+      </div>
     </div>
 
     {{!-- Field: Weekly Effect --}}

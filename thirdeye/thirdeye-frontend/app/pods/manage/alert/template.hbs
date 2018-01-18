@@ -71,8 +71,10 @@
           </div>
         </li>
         <li class="te-search-results__row">
-          <div class="te-search-results__option te-search-results__option--solo">Anomaly Pattern</div>
-          <div class="te-search-results__value-solo" title={{alertData.pattern}}>{{alertData.pattern}}</div>
+          <div class="te-search-results__option te-search-results__option--solo">Anomaly Patternx</div>
+          <div class="te-search-results__value-solo" title={{alertData.pattern}}>
+            {{if alertData.pattern alertData.pattern 'N/A'}}
+          </div>
         </li>
         <li class="te-search-results__row">
           <div class="te-search-results__option te-search-results__option--solo">Mailing List</div>

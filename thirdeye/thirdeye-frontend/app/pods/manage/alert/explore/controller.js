@@ -9,7 +9,7 @@ import Controller from '@ember/controller';
 import { computed } from '@ember/object';
 import { once } from '@ember/runloop';
 import { checkStatus, postProps, buildDateEod } from 'thirdeye-frontend/helpers/utils';
-import { buildAnomalyStats, getTopDimensions } from 'thirdeye-frontend/helpers/manage-alert-utils';
+import { buildAnomalyStats } from 'thirdeye-frontend/helpers/manage-alert-utils';
 
 export default Controller.extend({
   /**
@@ -359,7 +359,8 @@ export default Controller.extend({
         }
       })
       .catch((err) => {
-        this.set('isReplayStatusError', true);
+        // TODO: Do not show error state if no action can be taken
+        //this.set('isReplayStatusError', true);
       });
   },
 

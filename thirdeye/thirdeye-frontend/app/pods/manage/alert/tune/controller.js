@@ -42,12 +42,20 @@ export default Controller.extend({
   /**
    * Severity display options (power-select) and values
    */
-  severityMap: {
-    'Percentage of Change': 'weight',
-    'Absolute Value of Change': 'deviation',
-    'Site Wide Impact': 'site_wide_impact'
-  },
+  severityMap: computed('alertData', function() {
+    const severityObj = {
+      'Percentage of Change': 'weight',
+      'Absolute Value of Change': 'deviation'
+    };
+    if (this.get('alertData.toCalculateGlobalMetric') !== false) {
+      severityObj['Site Wide Impact'] = 'site_wide_impact';
+    }
+    return severityObj;
+  }),
 
+  /**
+   * Severity power-select options
+   */
   tuneSeverityOptions: computed('severityMap', function() {
     return Object.keys(this.get('severityMap'));
   }),
@@ -77,6 +85,16 @@ export default Controller.extend({
   },
 
   /**
+   * Conditional formatting for tuning fields
+   */
+  isTuneAmountPercent: computed(
+    'selectedSeverityOption',
+    function() {
+      return this.get('selectedSeverityOption') !== 'Absolute Value of Change';
+    }
+  ),
+
+  /**
    * Builds the new autotune filter from custom tuning options
    * @type {String}
    */
@@ -95,7 +113,8 @@ export default Controller.extend({
       const featureString = `window_size_in_hour,${severityMap[selectedSeverity]}`;
       const mttdString = `window_size_in_hour=${mttdVal};${severityMap[selectedSeverity]}=${severityThresholdVal}`;
       const patternString = patternMap[selectedPattern] ? `&pattern=${encodeURIComponent(patternMap[selectedPattern])}` : '';
-      return `&features=${encodeURIComponent(featureString)}&mttd=${encodeURIComponent(mttdString)}${patternString}`;
+      const configString = `&features=${encodeURIComponent(featureString)}&mttd=${encodeURIComponent(mttdString)}${patternString}`;
+      return { configString, severityVal: severityThresholdVal };
     }
   ),
 
@@ -168,11 +187,13 @@ export default Controller.extend({
    * @type {Object}
    */
   anomalyStats: computed(
+    'customPercentChange',
     'alertEvalMetrics',
     'alertEvalMetrics.projected',
     function() {
       const evalMetrics = this.get('alertEvalMetrics');
-      return buildAnomalyStats(evalMetrics, 'tune');
+      const severity = this.get('customPercentChange');
+      return buildAnomalyStats(evalMetrics, 'tune', severity);
     }
   ),
 
@@ -192,6 +213,7 @@ export default Controller.extend({
       } = this.getProperties('anomalyData', 'filterBy', 'selectedSortMode');
       let filterKey = '';
       let filteredAnomalies = anomalies;
+      let num = 1;
 
       switch (activeFilter) {
         case 'True Anomalies':
@@ -219,6 +241,12 @@ export default Controller.extend({
           filteredAnomalies = filteredAnomalies.sortBy(this.get('sortMap')[sortKey]).reverse();
         }
       }
+
+      // Number the list
+      filteredAnomalies.forEach((anomaly) => {
+        anomaly.index = num;
+        num ++;
+      });
 
       return filteredAnomalies;
     }

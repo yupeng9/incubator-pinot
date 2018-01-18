@@ -82,6 +82,11 @@ body {
 
   &__indent-block {
     margin-left: 20px;
+
+    &--custom {
+      background-color: app-shade(black, .04);
+      border-radius: 5px;
+    }
   }
 
   &__list-label {
@@ -106,7 +111,7 @@ body {
     margin: 5px 0 5px 5px;
 
     &--amount {
-      width: 45px;
+      width: 70px;
     }
   }
 
@@ -392,7 +397,8 @@ body {
   }
 
   &__card-units {
-    font-size: 20px;
+    font-size: 18px;
+    margin-left: -3px;
 
     &--small {
       font-size: 14px;
@@ -510,6 +516,12 @@ body {
     &--smaller {
       font-size: 12px;
       margin-left: -2px;
+    }
+
+    &--shadow {
+      position: absolute;
+      color: app-shade(black, 2);
+      margin-left: -18px;
     }
   }
 
