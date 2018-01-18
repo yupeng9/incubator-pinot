@@ -47,12 +47,14 @@
 
       <div class="te-pill-selectors">
         {{!-- Dimension selector --}}
-        <div class="te-pill-selectors__range-picker col-md-3">
+        <div class="te-form__select--wider col-md-3">
           {{#power-select
             triggerId="select-dimension"
             triggerClass="te-form__select"
             options=dimensionOptions
             searchEnabled=false
+            matchTriggerWidth=true
+            matchContentWidth=true
             selected=selectedDimension
             onchange=(action "onSelectDimension")
             as |dimension|
@@ -67,6 +69,8 @@
             triggerClass="te-form__select"
             options=resolutionOptions
             searchEnabled=false
+            matchTriggerWidth=true
+            matchContentWidth=true
             selected=selectedResolution
             onchange=(action "onSelectResolution")
             as |resolution|
@@ -100,48 +104,45 @@
         {{/te-modal}}
       {{/if}}
 
-      {{!-- Alert anomaly graph --}}
-      <div class="te-graph-container col-xs-12">
-        <div class="te-graph-alert {{if (not isGraphReady) 'te-graph-alert--pending'}}">
-          {{#if isMetricDataLoading}}
-            <div class="spinner-wrapper--self-serve">{{ember-spinner}}</div>
+      <div class="col-xs-12 te-graph-container">
+        <div class="te-graph-alert {{if (or isMetricDataLoading isMetricDataInvalid) 'te-graph-alert--pending'}}">
+          {{#if isDimensionFetchDone}}
+            <div class="te-form__super-label">...Displaying top 5 contributing subDimensions for <strong>{{alertDimension}}</strong></div>
           {{/if}}
-          {{#if isGraphReady}}
-            {{anomaly-graph
-              primaryMetric=metricData
-              isLoading=loading
-              showSubchart=true
-              showLegend=false
-              legendText=legendText
-              enableZoom=true
-              componentId='create-alert'
-              showGraphLegend=false
-              height=400
-            }}
-
-    {{!--  {{anomaly-graph
-              primaryMetric=metricData
-              selectedDimensions=selectedDimensions
-              dimensions=topDimensions
-              showDimensions=true
-              isLoading=loading
-              showSubchart=true
-              showLegend=true
-              enableZoom=true
-              componentId='create-alert'
-              showGraphLegend=false
-              onSelection=(action "onSelection")
-              onPrimaryMetricToggle=(action "onPrimaryMetricToggle")
-              height=400
-            }} --}}
-
-          {{else}}
-             <div class="te-graph-alert__content">
-              <div class="glyphicon glyphicon-equalizer}} te-graph-alert__icon"></div>
-              <p class="te-graph-alert__pre-text">Loading graph...</p>
+          {{#if isMetricDataLoading}}
+              <div class="spinner-wrapper--self-serve">{{ember-spinner}}</div>
+            <div class="te-graph-alert__content">
+              <div class="glyphicon glyphicon-{{if isMetricDataInvalid 'alert' 'equalizer'}} te-graph-alert__icon{{if isMetricDataInvalid '--warning'}}"></div>
+              <p class="te-graph-alert__pre-text">{{graphMessageText}}</p>
             </div>
+          {{else}}
+            {{#if (not isMetricDataInvalid)}}
+              {{anomaly-graph
+                primaryMetric=metricData
+                selectedDimensions=selectedDimensions
+                dimensions=topDimensions
+                showDimensions=true
+                isLoading=loading
+                showSubchart=true
+                showLegend=true
+                enableZoom=true
+                componentId='create-alert'
+                showGraphLegend=false
+                onSelection=(action "onSelection")
+                onPrimaryMetricToggle=(action "onPrimaryMetricToggle")
+              }}
+              <div class="te-form__note">
+                NOTE: If you find the metric shown above is inconsistent, please email <a class="thirdeye-link-secondary" target="_blank" href="{{graphMailtoLink}}">ask_thirdeye</a>.
+              </div>
+            {{else}}
+              <div class="te-graph-alert__content">
+                <div class="glyphicon glyphicon-{{if isMetricDataInvalid 'alert' 'equalizer'}} te-graph-alert__icon{{if isMetricDataInvalid '--warning'}}"></div>
+                <p class="te-graph-alert__pre-text">{{graphMessageText}}</p>
+              </div>
+            {{/if}}
           {{/if}}
         </div>
+
       </div>
 
       {{#if filteredAnomalies}}

@@ -124,6 +124,15 @@ body {
       float: right;
     }
   }
+
+  &__select {
+    &--wider {
+      width: 600px;
+      margin-left: -15px;
+      display: inline-block;
+      color: app-shade(black, 7);
+    }
+  }
 }
 
 .te-content-block {
@@ -238,7 +247,6 @@ body {
     display: inline-block;
     color: app-shade(black, 7);
     margin: 0;
-    width: 289px;
 
     .daterangepicker-input {
       background: none;
@@ -246,6 +254,7 @@ body {
       box-shadow: none;
       padding: 3px 5px;
       height: auto;
+      width: auto;
     }
   }
 

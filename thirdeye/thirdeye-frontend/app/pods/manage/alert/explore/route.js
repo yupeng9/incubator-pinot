@@ -7,7 +7,7 @@ import fetch from 'fetch';
 import moment from 'moment';
 import Route from '@ember/routing/route';
 import { checkStatus, postProps, parseProps, buildDateEod, toIso } from 'thirdeye-frontend/helpers/utils';
-import { enhanceAnomalies, toIdGroups, setUpTimeRangeOptions, fetchGraphData } from 'thirdeye-frontend/helpers/manage-alert-utils';
+import { enhanceAnomalies, toIdGroups, setUpTimeRangeOptions, fetchGraphData, getTopDimensions } from 'thirdeye-frontend/helpers/manage-alert-utils';
 
 /**
  * Shorthand for setting date defaults
@@ -19,9 +19,36 @@ const dateFormat = 'YYYY-MM-DD';
  */
 const paginationDefault = 10;
 const durationDefault = '1m';
+const metricDataColor = 'blue';
 const durationMap = { m:'month', d:'day', w:'week' };
 const startDateDefault = buildDateEod(1, 'month');
 const endDateDefault = buildDateEod(1, 'day');
+
+/**
+ * Response type options for anomalies
+ */
+const anomalyResponseObj = [
+  { name: 'Not reviewed yet',
+    value: 'NO_FEEDBACK',
+    status: 'Not Resolved'
+  },
+  { name: 'True anomaly',
+    value: 'ANOMALY',
+    status: 'Confirmed Anomaly'
+  },
+  { name: 'False alarm',
+    value: 'NOT_ANOMALY',
+    status: 'False Alarm'
+  },
+  { name: 'I don\'t know',
+    value: 'NO_FEEDBACK',
+    status: 'Not Resolved'
+  },
+  { name: 'Confirmed - New Trend',
+    value: 'ANOMALY_NEW_TREND',
+    status: 'New Trend'
+  }
+];
 
 /**
  * Fetches all anomaly data for found anomalies - downloads all 'pages' of data from server
@@ -87,7 +114,7 @@ const processRangeParams = (bucketUnit, duration, start, end) => {
 const fetchAnomalyGraphData = (config) => {
   const {
     id,
-    dimension,
+    exploreDimensions: dimension = 'All',
     currentStart,
     currentEnd,
     baselineStart,
@@ -106,21 +133,26 @@ const fetchAnomalyGraphData = (config) => {
  * @return {String} URL for graph metric API
  */
 const buildGraphConfig = (config, maxTime) => {
+  const dimension = config.exploreDimensions ? config.exploreDimensions.split(',')[0] : 'All';
   const currentEnd = moment(maxTime).isValid()
     ? moment(maxTime).valueOf()
     : buildDateEod(1, 'day').valueOf();
-  const formattedFilters = encodeURIComponent(JSON.stringify(parseProps(config.filters)));
-  const baselineStart = moment(config.startStamp).subtract(1, 'week').valueOf();
-  const graphEnd = (config.endStamp < currentEnd) ? config.endStamp : currentEnd;
-  const baselineEnd = moment(graphEnd).subtract(1, 'week');
-
-  const metricDataUrl = `/timeseries/compare/${config.id}/${config.startStamp}/${graphEnd}/${baselineStart}/` +
-    `${baselineEnd}?dimension=${config.dimension}&granularity=${config.bucketSize}_${config.bucketUnit}&filters=` +
-    `${formattedFilters}&minDate=${config.baseEnd}&maxDate=${config.baseStart}`;
-
-  const topDimensionsUrl = `/rootcause/query?framework=relatedDimensions&anomalyStart=${config.startStamp}` +
-    `&anomalyEnd=${graphEnd}&baselineStart=${config.startStamp}&baselineEnd=${graphEnd}&analysisStart=` +
-    `${config.startStamp}&analysisEnd=${graphEnd}&urns=thirdeye:metric:${config.id}&filters=${formattedFilters}`;
+  const formattedFilters = JSON.stringify(parseProps(config.filters));
+  // Load less data if granularity is 'minutes'
+  const isMinutely = config.bucketUnit.toLowerCase().includes('minute');
+  const duration = isMinutely ? { unit: 2, size: 'week' } : { unit: 1, size: 'month' };
+  const currentStart = moment(currentEnd).subtract(duration.unit, duration.size).valueOf();
+  const baselineStart = moment(currentStart).subtract(1, 'week').valueOf();
+  const baselineEnd = moment(currentEnd).subtract(1, 'week');
+  // Prepare call for metric graph data
+  const metricDataUrl =  `/timeseries/compare/${config.id}/${currentStart}/${currentEnd}/` +
+    `${baselineStart}/${baselineEnd}?dimension=${dimension}&granularity=` +
+    `${config.bucketSize + '_' + config.bucketUnit}&filters=${encodeURIComponent(formattedFilters)}`;
+  // Prepare call for dimension graph data
+  const topDimensionsUrl = `/rootcause/query?framework=relatedDimensions&anomalyStart=${currentStart}` +
+    `&anomalyEnd=${currentEnd}&baselineStart=${baselineStart}&baselineEnd=${baselineEnd}` +
+    `&analysisStart=${currentStart}&analysisEnd=${currentEnd}&urns=thirdeye:metric:${config.id}` +
+    `&filters=${encodeURIComponent(formattedFilters)}`;
 
   return { metricDataUrl, topDimensionsUrl };
 };
@@ -169,17 +201,16 @@ export default Route.extend({
     const tuneUrl = `/detection-job/autotune/filter/${id}?${tuneParams}`;
     const evalUrl = `/detection-job/eval/filter/${id}?${tuneParams}`;
     const mttdUrl = `/detection-job/eval/mttd/${id}`;
-    const initialPromiseHash = {
-      evalData: fetch(evalUrl).then(checkStatus), // NOTE: ensure API returns JSON
+    const performancePromiseHash = {
       autotuneId: fetch(tuneUrl, postProps('')).then(checkStatus),
       current: fetch(`${evalUrl}&isProjected=FALSE`).then(checkStatus),
       projected: fetch(`${evalUrl}&isProjected=TRUE`).then(checkStatus),
       mttd: fetch(mttdUrl).then(checkStatus)
     };
 
-    return Ember.RSVP.hash(initialPromiseHash)
+    return Ember.RSVP.hash(performancePromiseHash)
       .then((alertEvalMetrics) => {
-        Object.assign(alertEvalMetrics.evalData, { mttd: alertEvalMetrics.mttd});
+        //Object.assign(alertEvalMetrics.evalData, { mttd: alertEvalMetrics.mttd});
         Object.assign(alertEvalMetrics.current, { mttd: alertEvalMetrics.mttd});
         return {
           id,
@@ -237,42 +268,37 @@ export default Route.extend({
       bucketUnit,
       baseEnd,
       baseStart,
-      dimension: exploreDimensions || 'All'
+      exploreDimensions
     };
 
     // Load endpoints for projected metrics
     const qsParams = `start=${baseStart.utc().format(dateFormat)}&end=${baseEnd.utc().format(dateFormat)}&useNotified=true`;
     const tuneParams = `start=${toIso(startDate)}&end=${toIso(endDate)}`;
     const anomalyDataUrl = `/anomalies/search/anomalyIds/${startStamp}/${endStamp}/1?anomalyIds=`;
-    const projectedUrl = `/detection-job/eval/autotune/${alertEvalMetrics.autotuneId}?${tuneParams}`;
     const projectedMttdUrl = `/detection-job/eval/projected/mttd/${alertEvalMetrics.autotuneId}`;
     const metricsUrl = `/data/autocomplete/metric?name=${dataset}::${metricName}`;
     const anomaliesUrl = `/dashboard/anomaly-function/${alertId}/anomalies?${qsParams}`;
 
-    const promiseHash = {
+    const anomalyPromiseHash = {
       projectedMttd: fetch(projectedMttdUrl).then(checkStatus),
-      projectedEval: fetch(projectedUrl).then(checkStatus), // NOTE: ensure API returns JSON
       metricsByName: fetch(metricsUrl).then(checkStatus),
       anomalyIds: fetch(anomaliesUrl).then(checkStatus)
     };
 
-    Object.assign(model, { startStamp, endStamp, alertEvalMetrics, anomalyDataUrl, replayId });
-
-    return Ember.RSVP.hash(promiseHash)
+    return Ember.RSVP.hash(anomalyPromiseHash)
       .then((data) => {
         const totalAnomalies = data.anomalyIds.length;
-        Object.assign(data.projectedEval, { mttd: data.projectedMttd });
-        //Object.assign(model.alertEvalMetrics, { projected: data.projectedEval });
+        Object.assign(model.alertEvalMetrics.projected, { mttd: data.projectedMttd });
         Object.assign(config, { id: data.metricsByName.length ? data.metricsByName.pop().id : '' });
-        Object.assign(model, { anomalyIds: data.anomalyIds, totalAnomalies, anomalyDataUrl });
-        return fetchCombinedAnomalies(data.anomalyIds);
+        Object.assign(model, {
+          anomalyIds: data.anomalyIds,
+          exploreDimensions,
+          totalAnomalies,
+          anomalyDataUrl,
+          config
+        });
+        fetch(`/data/maxDataTime/metricId/${config.id}`).then(checkStatus);
       })
-      // Fetch all anomaly data for returned Ids to paginate all from one array
-      .then((rawAnomalyData) => {
-        Object.assign(model, { rawAnomalyData });
-        return fetch(`/data/maxDataTime/metricId/${config.id}`).then(checkStatus);
-      })
-      // Fetch max data time for this metric (prep call for graph data) - how much data can be displayed?
       // Note: In the event of custom date selection, the end date might be less than maxTime
       .then((maxTime) => {
         const { metricDataUrl, topDimensionsUrl } = buildGraphConfig(config, maxTime);
@@ -291,83 +317,115 @@ export default Route.extend({
       id,
       replayId,
       alertData,
+      anomalyIds,
       email,
       filters,
       duration,
-      startStamp,
-      endStamp,
+      config,
       loadError,
       metricDataUrl,
-      totalAnomalies,
       anomalyDataUrl,
+      topDimensionsUrl,
+      exploreDimensions,
+      totalAnomalies,
       alertEvalMetrics,
       allConfigGroups,
       allAppNames,
       rawAnomalyData
     } = model;
 
+    // Initial value setup for displayed option lists
+    let subD = {};
+    let anomalyData = [];
     const resolutionOptions = ['All Resolutions'];
     const dimensionOptions = ['All Dimensions'];
-
-    // Set up the response type options for anomalies
-    const anomalyResponseObj = [
-      { name: 'Not reviewed yet',
-        value: 'NO_FEEDBACK',
-        status: 'Not Resolved'
-      },
-      { name: 'True anomaly',
-        value: 'ANOMALY',
-        status: 'Confirmed Anomaly'
-      },
-      { name: 'False alarm',
-        value: 'NOT_ANOMALY',
-        status: 'False Alarm'
-      },
-      { name: 'I don\'t know',
-        value: 'NO_FEEDBACK',
-        status: 'Not Resolved'
-      },
-      { name: 'Confirmed - New Trend',
-        value: 'ANOMALY_NEW_TREND',
-        status: 'New Trend'
-      }
-    ];
-
-    // Clean array for response options power-select
+    const wowOptions = ['Wow', 'Wo2W', 'Wo3W', 'Wo4W'];
+    const baselineOptions = [{ name: 'Predicted', isActive: true }];
     const responseOptions = anomalyResponseObj.map(response => response.name);
-    const anomalyData = enhanceAnomalies(rawAnomalyData);
-
-    // Set up options for resolution filter dropdown based on existing values
-    resolutionOptions.push(...new Set(anomalyData.map(record => record.anomalyFeedback)));
     const timeRangeOptions = setUpTimeRangeOptions(['1m', '2w', '1w'], duration);
+    const alertDimension = exploreDimensions ? exploreDimensions.split(',')[0] : '';
+    const newWowList = wowOptions.map((item) => {
+      return { name: item, isActive: false };
+    });
 
     // Prime the controller
     controller.setProperties({
       loadError,
       replayId,
       alertId: id,
-      allConfigGroups,
-      allAppNames,
-      metricDataUrl,
-      totalAnomalies,
+      isMetricDataInvalid: false,
       anomalyDataUrl,
+      baselineOptions,
       responseOptions,
       timeRangeOptions,
-      resolutionOptions,
       alertData,
-      emailData: email,
       anomalyResponseObj,
-      filterData: filters,
-      anomalyData,
+      anomaliesLoaded: false,
       alertEvalMetrics,
-      activeRangeStart: startStamp,
-      activeRangeEnd: endStamp,
+      activeRangeStart: config.startStamp,
+      activeRangeEnd: config.endStamp,
       isReplayPending: Ember.isPresent(model.replayId),
       isReplayStatusError: model.replayId === 'err',
-      dimensionOptions: Array.from(new Set(dimensionOptions))
+      isMetricDataLoading: true
     });
 
+    // Kick off controller defaults and replay status check
     controller.initialize();
+
+    // Fetch all anomalies we have Ids for. Enhance the data and populate power-select filter options.
+    fetchCombinedAnomalies(anomalyIds)
+      .then((rawAnomalyData) => {
+        anomalyData = enhanceAnomalies(rawAnomalyData);
+        resolutionOptions.push(...new Set(anomalyData.map(record => record.anomalyFeedback)));
+        dimensionOptions.push(...new Set(anomalyData.map(anomaly => anomaly.dimensionString)));
+        controller.setProperties({
+          anomaliesLoaded: true,
+          anomalyData,
+          resolutionOptions,
+          dimensionOptions
+        });
+        return fetch(metricDataUrl).then(checkStatus);
+      })
+      // Fetch and load graph metric data
+      .then((metricData) => {
+        subD = metricData.subDimensionContributionMap;
+        Object.assign(metricData, { color: metricDataColor });
+        controller.setProperties({
+          alertDimension,
+          topDimensions: [],
+          metricData,
+          isMetricDataLoading: exploreDimensions ? true : false
+        });
+        return this.fetchCombinedAnomalyChangeData(anomalyData);
+      })
+      // Load and display rest of options once data is loaded ('2week', 'Last Week')
+      .then((wowData) => {
+        anomalyData.forEach((anomaly) => {
+          anomaly.wowData = wowData[anomaly.anomalyId] || {};
+        });
+        controller.setProperties({
+          anomalyData,
+          baselineOptions: [baselineOptions[0], ...newWowList]
+        });
+        // If alert has dimensions set, load them into graph
+        if (exploreDimensions) {
+          return fetch(topDimensionsUrl).then(checkStatus).then((allDimensions) => {
+            const newtopDimensions = getTopDimensions(subD, allDimensions, alertDimension);
+            controller.setProperties({
+              topDimensions: newtopDimensions,
+              isMetricDataLoading: false
+            });
+          });
+        }
+      })
+      .catch((errors) => {
+        console.log('err : ', errors);
+        controller.setProperties({
+          isMetricDataInvalid: true,
+          isMetricDataLoading: false,
+          graphMessageText: 'Error loading metric data'
+        });
+      });
   },
 
   resetController(controller, isExiting) {
@@ -378,10 +436,19 @@ export default Route.extend({
     }
   },
 
-  actions: {
-    // Fetch supplemental data after template has rendered (like graph)
-    didTransition() {
-      this.controller.fetchDeferredAnomalyData();
-    }
+  /**
+   * Fetches change rate data for each available anomaly id
+   * @method fetchCombinedAnomalyChangeData
+   * @returns {Ember.RSVP promise}
+   */
+  fetchCombinedAnomalyChangeData(anomalyData) {
+    let promises = {};
+
+    anomalyData.forEach((anomaly) => {
+      let id = anomaly.anomalyId;
+      promises[id] = fetch(`/anomalies/${id}`).then(checkStatus);
+    });
+
+    return Ember.RSVP.hash(promises);
   }
 });

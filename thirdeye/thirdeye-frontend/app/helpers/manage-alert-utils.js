@@ -57,7 +57,7 @@ export function enhanceAnomalies(rawAnomalies) {
   const anomalies = anomaliesPresent ? [].concat(...rawAnomalies.map(data => data.anomalyDetailsList)) : [];
 
   // Loop over all anomalies to configure display settings
-  for (var anomaly of anomalies) {
+  anomalies.forEach((anomaly) => {
     let dimensionList = [];
     const startMoment = moment(anomaly.anomalyStart);
     const endMoment = moment(anomaly.anomalyEnd);
@@ -97,16 +97,19 @@ export function enhanceAnomalies(rawAnomalies) {
     // Create a list of all available dimensions for toggling. Also massage dimension property.
     if (anomaly.anomalyFunctionDimension) {
       let dimensionObj = JSON.parse(anomaly.anomalyFunctionDimension);
+      let dimensionStrArr = [];
       for (let dimension of Object.keys(dimensionObj)) {
         let dimensionKey = dimension.dasherize();
         let dimensionVal = dimensionObj[dimension].join(',');
         dimensionList.push({ dimensionKey, dimensionVal });
+        dimensionStrArr.push(`${dimensionKey}:${dimensionVal}`);
       }
-      Object.assign(anomaly, { dimensionList });
+      let dimensionString = dimensionStrArr.join(' & ');
+      Object.assign(anomaly, { dimensionList, dimensionString });
     }
 
     newAnomalies.push(anomaly);
-  }
+  });
 
   return newAnomalies;
 }
@@ -160,53 +163,48 @@ export function evalObj() {
   };
 }
 
-  /**
-   * If a dimension has been selected, the metric data object will contain subdimensions.
-   * This method calls for dimension ranking by metric, filters for the selected dimension,
-   * and returns a sorted list of graph-ready dimension objects.
-   * @method getTopDimensions
-   * @param {Object} dimensionObj - the object containing available subdimension for current metric
-   * @param {String} dimensionUrl - the URL for the related dimensions call
-   * @param {Number} maxSize - number of sub-dimensions to display on graph
-   * @param {String} selectedDimension - the user-selected dimension to graph
-   * @return {RSVP Promise}
-   */
-  export function getTopDimensions(dimensionObj = {}, dimensionUrl, maxSize, selectedDimension) {
-    const colors = ['orange', 'teal', 'purple', 'red', 'green', 'pink'];
-    let dimensionList = [];
-    let topDimensions = [];
-    let topDimensionLabels = [];
-    let filteredDimensions = [];
-    let colorIndex = 0;
+/**
+ * If a dimension has been selected, the metric data object will contain subdimensions.
+ * This method calls for dimension ranking by metric, filters for the selected dimension,
+ * and returns a sorted list of graph-ready dimension objects.
+ * @method getTopDimensions
+ * @param {Object} dimensionObj - the object containing available subdimension for current metric
+ * @param {String} dimensionUrl - the URL for the related dimensions call
+ * @param {Number} maxSize - number of sub-dimensions to display on graph
+ * @param {String} selectedDimension - the user-selected dimension to graph
+ * @return {RSVP Promise}
+ */
+export function getTopDimensions(dimensionObj = {}, scoredDimensions, selectedDimension) {
+  const maxSize = 5;
+  const colors = ['orange', 'teal', 'purple', 'red', 'green', 'pink'];
+  let dimensionList = [];
+  let colorIndex = 0;
 
-    return new Ember.RSVP.Promise((resolve) => {
-      fetch(dimensionUrl).then(checkStatus)
-        .then((scoredDimensions) => {
-          // Select scored dimensions belonging the selected one
-          filteredDimensions =  _.filter(scoredDimensions, function(dimension) {
-            return dimension.label.split('=')[0] === selectedDimension;
-          });
-          // Prep a sorted list of labels for our dimension's top contributing sub-dimensions
-          topDimensions = filteredDimensions.sortBy('score').reverse().slice(0, maxSize);
-          topDimensionLabels = [...new Set(topDimensions.map(key => key.label.split('=')[1]))];
-          // Build the array of subdimension objects for the selected dimension
-          for (let subDimension of topDimensionLabels){
-            if (subDimension && dimensionObj[subDimension]) {
-              dimensionList.push({
-                name: subDimension,
-                color: colors[colorIndex],
-                baselineValues: dimensionObj[subDimension].baselineValues,
-                currentValues: dimensionObj[subDimension].currentValues,
-                isSelected: true
-              });
-              colorIndex++;
-            }
-          }
-          // Return sorted list of dimension objects
-          resolve(dimensionList);
+  if (selectedDimension) {
+    const filteredDimensions =  _.filter(scoredDimensions, (dimension) => {
+      return dimension.label.split('=')[0] === selectedDimension;
+    });
+    const topDimensions = filteredDimensions.sortBy('score').reverse().slice(0, maxSize);
+    const topDimensionLabels = [...new Set(topDimensions.map(key => key.label.split('=')[1]))];
+
+    // Build the array of subdimension objects for the selected dimension
+    topDimensionLabels.forEach((subDimension) => {
+      if (dimensionObj[subDimension] && subDimension !== '') {
+        dimensionList.push({
+          name: subDimension,
+          metricName: subDimension,
+          color: colors[colorIndex],
+          baselineValues: dimensionObj[subDimension].baselineValues,
+          currentValues: dimensionObj[subDimension].currentValues
         });
+        colorIndex++;
+      }
     });
   }
+
+  // Return sorted list of dimension objects
+  return dimensionList;
+}
 
 /**
  * Data needed to render the stats 'cards' above the anomaly graph for a given alert
@@ -284,6 +282,7 @@ export default helper(
   toIdGroups,
   pluralizeTime,
   enhanceAnomalies,
+  getTopDimensions,
   setUpTimeRangeOptions,
   buildAnomalyStats,
   evalObj

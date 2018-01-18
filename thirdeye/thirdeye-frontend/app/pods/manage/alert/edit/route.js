@@ -27,12 +27,10 @@ const buildGraphConfig = (config, maxTime) => {
   const currentStart = moment(currentEnd).subtract(duration.unit, duration.size).valueOf();
   const baselineStart = moment(currentStart).subtract(1, 'week').valueOf();
   const baselineEnd = moment(currentEnd).subtract(1, 'week');
-
   // Prepare call for metric graph data
   const metricDataUrl =  `/timeseries/compare/${config.id}/${currentStart}/${currentEnd}/` +
     `${baselineStart}/${baselineEnd}?dimension=${dimension}&granularity=` +
     `${config.bucketSize + '_' + config.bucketUnit}&filters=${encodeURIComponent(formattedFilters)}`;
-
   // Prepare call for dimension graph data
   const topDimensionsUrl = `/rootcause/query?framework=relatedDimensions&anomalyStart=${currentStart}` +
     `&anomalyEnd=${currentEnd}&baselineStart=${baselineStart}&baselineEnd=${baselineEnd}` +

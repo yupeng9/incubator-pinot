@@ -7,6 +7,7 @@ import fetch from 'fetch';
 import moment from 'moment';
 import Controller from '@ember/controller';
 import { computed } from '@ember/object';
+import { once } from '@ember/runloop';
 import { checkStatus, postProps, buildDateEod } from 'thirdeye-frontend/helpers/utils';
 import { buildAnomalyStats, getTopDimensions } from 'thirdeye-frontend/helpers/manage-alert-utils';
 
@@ -71,7 +72,6 @@ export default Controller.extend({
       isReportSuccess: false,
       isReportFailure: false,
       isPageLoadFailure: false,
-      isMetricDataLoading: true,
       isReplayModeWrapper: true,
       isAnomalyArrayChanged: false,
       requestCanContinue: true,
@@ -80,7 +80,6 @@ export default Controller.extend({
       sortColumnChangeUp: false,
       sortColumnResolutionUp: false,
       checkReplayInterval: 5000,
-      baselineOptions: [{ name: 'Predicted', isActive: true }],
       selectedDimension: 'All Dimensions',
       selectedResolution: 'All Resolutions',
       dateRangeToRender: [30, 10, 5],
@@ -202,6 +201,18 @@ export default Controller.extend({
   showGraph: Ember.computed.bool('isGraphReady'),
 
   /**
+   * All selected dimensions to be loaded into graph
+   * @returns {Array}
+   */
+  selectedDimensions: computed(
+    'topDimensions',
+    'topDimensions.@each.isSelected',
+    function() {
+      return this.get('topDimensions').filterBy('isSelected');
+    }
+  ),
+
+  /**
    * date-time-picker: returns a time object from selected range end date
    * @type {Object}
    */
@@ -265,29 +276,26 @@ export default Controller.extend({
     'selectedDimension',
     'selectedResolution',
     'anomalyData',
+    'anomaliesLoaded',
     function() {
       const {
+        anomaliesLoaded,
         selectedDimension: targetDimension,
         selectedResolution: targetResolution
-      } = this.getProperties('selectedDimension', 'selectedResolution');
-      let anomalies = this.get('anomalyData');
+      } = this.getProperties('selectedDimension', 'selectedResolution', 'anomaliesLoaded');
+      let anomalies = [];
 
-      // Filter for selected dimension
-      if (targetDimension !== 'All Dimensions') {
-        anomalies = anomalies.filter((data) => {
-          if (data.dimensionList.length) {
-            return targetDimension === `${data.dimensionList[0].dimensionKey}:${data.dimensionList[0].dimensionVal}`;
-          }
-        });
+      if (anomaliesLoaded) {
+        anomalies = this.get('anomalyData');
+        if (targetDimension !== 'All Dimensions') {
+          // Filter for selected dimension
+          anomalies = anomalies.filter(data => targetDimension === data.dimensionString);
+        }
+        if (targetResolution !== 'All Resolutions') {
+          // Filter for selected resolution
+          anomalies = anomalies.filter(data => targetResolution === data.anomalyFeedback);
+        }
       }
-
-      // Filter for selected resolution
-      if (targetResolution !== 'All Resolutions') {
-        anomalies = anomalies.filter((data) => {
-          return targetResolution === data.anomalyFeedback;
-        });
-      }
-
       return anomalies;
     }
   ),
@@ -329,22 +337,6 @@ export default Controller.extend({
   },
 
   /**
-   * Fetches change rate data for each available anomaly id
-   * @method fetchCombinedAnomalyChangeData
-   * @returns {Ember.RSVP promise}
-   */
-  fetchCombinedAnomalyChangeData() {
-    let promises = {};
-
-    for (var anomaly of this.get('anomalyData')) {
-      let id = anomaly.anomalyId;
-      promises[id] = fetch(`/anomalies/${id}`).then(checkStatus);
-    }
-
-    return Ember.RSVP.hash(promises);
-  },
-
-  /**
    * Pings the job-info endpoint to check status of an ongoing replay job.
    * If there is no progress after a set time, we display an error message.
    * TODO: Set error message on timeout
@@ -368,57 +360,6 @@ export default Controller.extend({
       })
       .catch((err) => {
         this.set('isReplayStatusError', true);
-      });
-  },
-
-  /**
-   * Downloads data that is not critical for the initial page load
-   * TODO: Should we move all requests to the route?
-   * @method fetchDeferredAnomalyData
-   * @return {Promise}
-   */
-  fetchDeferredAnomalyData() {
-    const dimensionSize = 5;
-    const wowOptions = ['Wow', 'Wo2W', 'Wo3W', 'Wo4W'];
-    const newWowList = wowOptions.map((item) => {
-      return { name: item, isActive: false };
-    });
-    const {
-      anomalyData,
-      baselineOptions,
-      selectedDimension,
-      topDimensionsUrl
-    } = this.getProperties('anomalyData', 'baselineOptions', 'selectedDimension', 'topDimensionsUrl');
-
-    return this.fetchCombinedAnomalyChangeData()
-      .then((wowData) => {
-        anomalyData.forEach((anomaly) => {
-          anomaly.wowData = wowData[anomaly.anomalyId] || {};
-        });
-        // Display rest of options once data is loaded ('2week', 'Last Week')
-        this.set('baselineOptions', [baselineOptions[0], ...newWowList]);
-        return fetch(this.get('metricDataUrl')).then(checkStatus);
-      })
-      .then((metricData) => {
-        const subD = metricData.subDimensionContributionMap;
-        // Display graph once data has loaded
-        this.setProperties({
-          isGraphReady: true,
-          isMetricDataLoading: false,
-          metricData
-        });
-/*        console.log(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
-        return getTopDimensions(subD, topDimensionsUrl, dimensionSize, selectedDimension || 'All');
-      })
-      .then((topDimensions) => {
-        console.log('topDimensions : ', topDimensions);
-        this.set('topDimensions', topDimensions);*/
-      })
-      .catch((errors) => {
-        this.setProperties({
-          loadError: true,
-          loadErrorMsg: errors
-        });
       });
   },
 
