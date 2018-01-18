@@ -421,19 +421,21 @@ export default Controller.extend({
    * @return {Promise}
    */
   reportAnomaly(id, data) {
-    const reportUrl = `/anomalies/reportAnomaly/${id}`;
+    const reportUrl = `/anomalies/reportAnomaly/${id}?`;
+    const updateUrl = `/anomalies/updateFeedbackRange/${data.startTime}/${data.endTime}/${id}?feedbackType=${data.feedbackType}`;
     const requiredProps = [data.startTime, data.endTime, data.feedbackType];
     const missingData = !requiredProps.every(prop => Ember.isPresent(prop));
+    let queryStringUrl = reportUrl;
 
     if (missingData) {
       return Promise.reject(new Error('missing data'));
     } else {
-      data.startTime = moment(data.startTime).utc().valueOf();
-      data.endTime = moment(data.endTime).utc().valueOf();
-      return fetch(reportUrl, postProps(data)).then((res) => checkStatus(res, 'post'))
+      Object.entries(data).forEach(([key, value]) => {
+        queryStringUrl += `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+      });
+      return fetch(queryStringUrl, postProps('')).then((res) => checkStatus(res, 'post'))
         .then((saveResult) => {
-          const updateUrl = `/anomalies/updateFeedbackRange/${data.startTime}/${data.endTime}/${id}`;
-          return fetch(updateUrl, postProps(data)).then((res) => checkStatus(res, 'post'));
+          return fetch(updateUrl, postProps('')).then((res) => checkStatus(res, 'post'));
         });
     }
   },
@@ -549,10 +551,7 @@ export default Controller.extend({
       const { alertId, missingAnomalyProps } = this.getProperties('alertId', 'missingAnomalyProps');
       this.reportAnomaly(alertId, missingAnomalyProps)
         .then((result) => {
-          this.setProperties({
-            openReportModal: false,
-            isReportSuccess: true
-          });
+          this.set('isReportSuccess', true);
         })
         // If failure, leave modal open and report
         .catch((err) => {
@@ -568,7 +567,6 @@ export default Controller.extend({
      */
     onCancel() {
       this.setProperties({
-        openReportModal: false,
         isReportSuccess: false,
         isReportFailure: false
       });
@@ -578,7 +576,11 @@ export default Controller.extend({
      * Open modal for missing anomalies
      */
     onClickReportAnomaly() {
-      this.set('openReportModal', true);
+      this.setProperties({
+        isReportSuccess: false,
+        isReportFailure: false,
+        openReportModal: true
+      });
     },
 
     /**

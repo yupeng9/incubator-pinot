@@ -31,17 +31,21 @@
 
 import Ember from 'ember';
 import _ from 'lodash';
+import moment from 'moment';
+import { computed } from '@ember/object';
 
 export default Ember.Component.extend({
   containerClassNames: 'alert-report-modal',
   isNewTrend: false,
+  showTimePicker: true,
+  timePickerIncrement: 30,
 
   /**
    * Collects all input data for the post request
    * @method reportAnomalyPayload
    * @return {Object} Post data
    */
-  reportAnomalyPayload: Ember.computed(
+  reportAnomalyPayload: computed(
     'isNewTrend',
     'anomalyComments',
     'selectedDimension',
@@ -50,8 +54,8 @@ export default Ember.Component.extend({
     'anomalyLinks',
     function() {
       const postObj = {
-        startTime: this.get('viewAnomalyStart'),
-        endTime: this.get('viewAnomalyEnd'),
+        startTime: moment(this.get('viewAnomalyStart')).utc().valueOf(),
+        endTime: moment(this.get('viewAnomalyEnd')).utc().valueOf(),
         feedbackType: this.get('isNewTrend') ? 'ANOMALY_NEW_TREND' : 'ANOMALY',
         dimension: this.get('selectedDimension') || null,
         comment: this.get('anomalyComments') || null,
