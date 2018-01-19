@@ -256,7 +256,8 @@ export default Controller.extend({
       // Number the list
       if (this.get('isTunePreviewActive')) {
         filteredAnomalies.forEach((anomaly) => {
-          anomaly.index = num;
+          //anomaly.index = num;
+          Ember.set(anomaly, 'index', num);
           num ++;
         });
       }
