@@ -211,8 +211,9 @@ export function getTopDimensions(dimensionObj = {}, scoredDimensions, selectedDi
  * @param {String} mode - the originating route
  * @returns {Array}
  */
-export function buildAnomalyStats(alertEvalMetrics, mode, severity = '30') {
+export function buildAnomalyStats(alertEvalMetrics, mode, severity = '30', isPercent = true) {
   const tooltip = false;
+  const severityUnit = isPercent ? '%' : '';
 
   const responseRateObj = {
     title: 'Response Rate',
@@ -245,11 +246,11 @@ export function buildAnomalyStats(alertEvalMetrics, mode, severity = '30') {
       text: 'Among all anomalies that happened, the % of them detected by the system.'
     },
     {
-      title: `MTTD for > ${severity}% change`,
+      title: `MTTD for > ${severity}${severityUnit} change`,
       key: 'mttd',
       units: 'hrs',
       tooltip,
-      text: `Minimum time to detect for anomalies with > ${severity}% change`
+      text: `Minimum time to detect for anomalies with > ${severity}${severityUnit} change`
     }
   ];
 

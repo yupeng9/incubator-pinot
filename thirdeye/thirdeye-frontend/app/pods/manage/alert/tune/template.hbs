@@ -40,7 +40,7 @@
             groupValue=selectedTuneType
             changed=(action "onUpdateTuneType")
             }}
-            <div class="te-form__list-label">Tune automatically with current settings</div>
+            <div class="te-form__list-label">Tune automatically with default settings</div>
           {{/radio-button}}
         </li>
         <li class="te-form__list-item">
@@ -65,6 +65,7 @@
             options=tunePatternOptions
             searchEnabled=false
             selected=selectedTunePattern
+            placeHolder="Select Pattern"
             onchange=(action (mut selectedTunePattern))
             disabled=isCustomFieldsDisabled
             as |pattern|

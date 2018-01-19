@@ -230,8 +230,11 @@ export default Route.extend({
       alertId: id,
       timeRangeOptions,
       anomalyData,
-      alertEvalMetrics
+      alertEvalMetrics,
+      originalProjectedMetrics: alertEvalMetrics.projected
     });
+
+    controller.initialize();
   },
 
   resetController(controller, isExiting) {
