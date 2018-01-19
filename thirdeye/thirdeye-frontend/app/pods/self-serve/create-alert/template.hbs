@@ -5,7 +5,7 @@
     <div class="col-xs-12">
       <legend class="te-form__section-title">Metric Details</legend>
     </div>
-    <div class="form-group col-xs-12 col-sm-8">
+    <div class="col-xs-12 col-sm-8">
       <div class="te-page__right te-page__right--inside">
         {{#link-to "self-serve.import-metric" class="thirdeye-link-secondary thirdeye-link-secondary--inside"}}
           Import a Metric From InGraphs
@@ -34,7 +34,7 @@
       {{/bs-alert}}
     {{/if}}
 
-    <div class="form-group col-xs-6 col-sm-4">
+    <div class="col-xs-6 col-sm-4">
       <label for="select-granularity" class="control-label te-label">Desired Granularity</label>
       {{#power-select
         options=metricGranularityOptions
@@ -51,7 +51,7 @@
       {{/power-select}}
     </div>
 
-    <div class="form-group col-xs-6">
+    <div class="col-xs-6">
       <label for="select-filters" class="control-label te-label required">Filters (optional)</label>
       {{filter-select
         options=filters
@@ -62,7 +62,7 @@
       }}
     </div>
 
-    <div class="form-group col-xs-6">
+    <div class="col-xs-6">
       <label for="select-dimension" class="control-label te-label">Dimension (optional)</label>
       {{#power-select
         classNames="te-input"
@@ -118,17 +118,17 @@
     </div>
   </fieldset>
 
-  <fieldset class="te-form__se  ction row">
+  <fieldset class="te-form__section row">
     <div class="col-xs-12">
       <legend class="te-form__section-title">Detection Configuration</legend>
     </div>
     {{!-- Field: Pattern --}}
-    <div class="form-group col-xs-4">
+    <div class="col-xs-12">
       <label for="select-pattern" class="control-label te-label required">Pattern of Interest *</label>
       {{#power-select
         loadingMessage="Waiting for the server...."
         triggerId="select-pattern"
-        triggerClass="te-form__select"
+        triggerClass="te-form__select col-xs-4"
         placeholder="Select a Pattern"
         loadingMessage="Please select a metric first"
         options=patternsOfInterest
@@ -144,7 +144,7 @@
     </div>
 
     {{!-- Field: Sensitivity --}}
-    <div class="form-group col-xs-8">
+    <div class="te-form__vertical-block col-xs-12">
       <label for="select-sensitivity" class="control-label te-label required">
         Sensitivity (optional)
         <span>
@@ -161,7 +161,7 @@
             triggerId="alert-tune-severity"
             triggerClass="te-form__tune-field"
             verticalPosition="below"
-            renderInPlace=true
+            placeholder="Select a severity"
             options=tuneSeverityOptions
             searchEnabled=false
             selected=selectedSeverityOption
@@ -182,7 +182,7 @@
             disabled=(not isMetricSelected)
           }}
         </div>
-        <span class="te-form__list-label--suffix">%, </span>
+        <span class="te-form__list-label--suffix">{{sensitivityUnits}}, </span>
         <span class="te-form__list-label">MTTD should be no more than</span>
         <div class="te-form__tune-field te-form__tune-field--amount">
           {{input
@@ -199,7 +199,7 @@
 
     {{!-- Field: Weekly Effect --}}
     {{#if (eq selectedGranularity 'DAYS')}}
-      <div class="form-group col-xs-6">
+      <div class="col-xs-6">
         <label for="select-effect" class="control-label te-label required">
           Weekly Seasonality *
           <span>
@@ -234,7 +234,7 @@
     </div>
 
     {{!-- Field: Alert Name --}}
-    <div class="form-group col-xs-12">
+    <div class="col-xs-12">
       <label for="anomaly-form-function-name" class="control-label te-label required">
         Alert Name *
         <div class="te-form__sub-label">Please follow this naming convention: <span class="te-form__sub-label--strong">productName_metricName_dimensionName_other</span></div>
@@ -255,7 +255,7 @@
     </div>
 
     {{!-- Field: App Name --}}
-    <div class="form-group col-xs-12">
+    <div class="col-xs-12">
       <label for="anomaly-form-app-name" class="control-label te-label required">Related Application, Product or Team *</label>
        {{#power-select
           options=allApplicationNames
@@ -275,7 +275,7 @@
     </div>
 
     {{!-- Field: Select Existing Subscription Group --}}
-    <div class="form-group col-sm-6">
+    <div class="col-sm-6">
       <label for="config-group" class="control-label te-label">Add This Alert To An Existing Subscription Group</label>
       {{#power-select
         options=filteredConfigGroups
@@ -295,7 +295,7 @@
       {{/power-select}}
     </div>
     {{!--  Fields for new alert group creation --}}
-    <div class="form-group col-sm-6">
+    <div class="col-sm-6">
       <label for="config-group-new-name" class="control-label te-label"><strong>Or</strong> Provide A New Subscription Group Name</label>
       {{#if isGroupNameDuplicate}}
         <div class="te-form__alert--warning alert-warning">Warning: <strong>{{newConfigGroupName}}</strong> already exists. Please try another name.</div>
@@ -313,7 +313,7 @@
     </div>
     {{!-- Alert Group Metadata --}}
     {{#if selectedConfigGroup}}
-      <div class="form-group col-xs-12">
+      <div class="col-xs-12">
         {{#if selectedGroupFunctions.length}}
           {{#bs-accordion as |acc|}}
             {{#acc.item class="te-form__custom-label" title=selectedConfigGroupSubtitle}}
@@ -332,7 +332,7 @@
       </div>
     {{/if}}
     {{!-- Field: new alert group recipient emails --}}
-    <div class="form-group col-xs-12">
+    <div class="col-xs-12">
       <label for="config-group" class="control-label te-label">
         Add Alert Notification Recipients *
         <div class="te-form__sub-label">Current recipients: <span class="te-form__sub-label--strong">{{if selectedGroupRecipients selectedGroupRecipients "None"}}</span></div>

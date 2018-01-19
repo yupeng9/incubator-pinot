@@ -339,10 +339,10 @@ export default Controller.extend({
     /**
      * Enable preview button
      */
-    onUpdateTuneType() {
+/*    onUpdateTuneType() {
       // TODO: if needed, handle enable/disable of preview button here
       // this.set('isPreviewDisabled', false);
-    },
+    },*/
 
     /**
      * Handle "reset" click - reload the model

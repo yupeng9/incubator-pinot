@@ -41,11 +41,8 @@ export default Ember.Controller.extend({
   topDimensions: [],
   originalDimensions: [],
   bsAlertBannerType: 'success',
-  customPercentChange: '30',
-  customMttdChange: '5',
   graphEmailLinkProps: '',
   replayStatusClass: 'te-form__banner--pending',
-  selectedSeverityOption: 'Percentage of Change',
   legendText: {
     dotted: {
       text: 'WoW'
@@ -128,13 +125,13 @@ export default Ember.Controller.extend({
     },
     severity: {
       'Percentage of Change': 'weight',
-      'Absolute Value of Change': 'deviation',
-      'Site Wide Impact': 'site_wide_impact'
+      'Absolute Value of Change': 'deviation'
     }
   },
 
   /**
    * Severity display options (power-select) and values
+   * @type {Object}
    */
   tuneSeverityOptions: computed(
     'optionMap.severity',
@@ -143,6 +140,16 @@ export default Ember.Controller.extend({
       return severityOptions;
     }
   ),
+
+  /**
+   * Conditionally display '%' based on selected severity option
+   * @type {String}
+   */
+  sensitivityUnits: computed('selectedSeverityOption', function() {
+    const chosenSeverity = this.get('selectedSeverityOption');
+    const isNotPercent = chosenSeverity && chosenSeverity.includes('Absolute');
+    return isNotPercent ? '' : '%';
+  }),
 
   /**
    * Builds the new autotune filter from custom tuning options

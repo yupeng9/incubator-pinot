@@ -85,13 +85,23 @@
           </div>
         </li>
       </div>
+      <div class="col-xs-12 col-sm-7">
+        <li class="te-search-results__row">
+          <div class="te-search-results__option te-search-results__option--solo">Granularity</div>
+          <div class="te-search-results__value-solo" title={{alertData.granularity}}>
+            <span class="{{unless alertData.granularity 'te-search-results__prop--missing' 'te-search-results__prop'}}">
+              {{if alertData.granularity alertData.granularity 'N/A'}}
+            </span>
+          </div>
+        </li>
+      </div>
     </ul>
 
     {{#if isEditModeActive}}
       <div class="te-topcard-subnav">
         <div class="te-topcard-subnav__item">
           {{#link-to "manage.alert.edit" alertData.id class="thirdeye-link thirdeye-link--smaller thirdeye-link--nav" activeClass="thirdeye-link--active"}}
-            Alert settings
+            Edit alert settings
           {{/link-to}}
         </div>
         <div class="te-topcard-subnav__item">

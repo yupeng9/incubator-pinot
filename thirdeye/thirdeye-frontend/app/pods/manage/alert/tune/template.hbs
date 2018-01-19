@@ -35,20 +35,12 @@
       </div>
       <ul class="te-form__list col-xs-12 col-sm-8">
         <li class="te-form__list-item">
-          {{#radio-button
-            value="current"
-            groupValue=selectedTuneType
-            changed=(action "onUpdateTuneType")
-            }}
+          {{#radio-button value="current" groupValue=selectedTuneType}}
             <div class="te-form__list-label">Tune automatically with default settings</div>
           {{/radio-button}}
         </li>
         <li class="te-form__list-item">
-          {{#radio-button
-            value="custom"
-            groupValue=selectedTuneType
-            changed=(action "onUpdateTuneType")
-            }}
+          {{#radio-button value="custom" groupValue=selectedTuneType}}
             <div class="te-form__list-label">Tune with customized settings</div>
           {{/radio-button}}
          </li>
