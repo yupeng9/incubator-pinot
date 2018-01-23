@@ -16,7 +16,7 @@ public abstract class AbstractOperator implements Operator {
     setConfiguration(configuration);
   }
 
-  public final void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
+  private final void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
     this.nodeIdentifier = Preconditions.checkNotNull(nodeIdentifier);
   }
 

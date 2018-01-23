@@ -320,8 +320,8 @@ public class DefaultDAGExecutorTest {
   public static class LogOperator extends Operator1x1<List<String>, List<String>> {
     private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
 
-    public LogOperator() {
-      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
+    public LogOperator(NodeIdentifier nodeIdentifier) {
+      super(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override
@@ -346,10 +346,9 @@ public class DefaultDAGExecutorTest {
    * An operator that always fails.
    */
   public static class FailedOperator extends Operator1x1<List<String>, List<String>> {
-    public FailedOperator() {
-      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
+    public FailedOperator(NodeIdentifier nodeIdentifier) {
+      super(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
     }
-
     @Override
     public void run() {
       throw new UnsupportedOperationException("Failed in purpose.");
@@ -360,20 +359,18 @@ public class DefaultDAGExecutorTest {
    * An operator for testing incompatible input and output port type.
    */
   public static class IntIntOperator extends Operator1x1<Integer, Integer> {
-    public IntIntOperator() {
-      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
+    public IntIntOperator(NodeIdentifier nodeIdentifier) {
+      super(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
     }
-
     @Override
     public void run() {
     }
   }
 
   public static class IntStringNumberOperator extends Operator2x1<Integer, List<String>, Number> {
-    public IntStringNumberOperator() {
-      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
+    public IntStringNumberOperator(NodeIdentifier nodeIdentifier) {
+      super(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
     }
-
     @Override
     public void run() {
     }

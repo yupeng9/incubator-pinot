@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.configuration.Configuration;
 
 public class OperatorDAGBuilder {
   private Map<NodeIdentifier, Operator> operators;
@@ -28,28 +29,41 @@ public class OperatorDAGBuilder {
     channels = new HashMap<>();
   }
 
-  public <T extends AbstractOperator> T addOperator(String identifier, Class<T> operatorClaz) {
-    Preconditions.checkNotNull(identifier);
-    T operator = OperatorUtils.initiateOperatorInstance(operatorClaz);
-    NodeIdentifier nodeIdentifier = new NodeIdentifier(identifier);
-    operator.setNodeIdentifier(nodeIdentifier);
-    return addOperator(nodeIdentifier, operator);
+  public <T extends AbstractOperator> T addOperator(String nodeName, Class<T> operatorClaz) {
+    Preconditions.checkNotNull(nodeName);
+    T operator = OperatorUtils.initiateOperatorInstance(new NodeIdentifier(nodeName), operatorClaz);
+    return addOperator(operator);
   }
 
   public <T extends AbstractOperator> T addOperator(NodeIdentifier nodeIdentifier, Class<T> operatorClaz) {
     Preconditions.checkNotNull(nodeIdentifier);
     T operator = OperatorUtils.initiateOperatorInstance(nodeIdentifier, operatorClaz);
-    return addOperator(nodeIdentifier, operator);
+    return addOperator(operator);
   }
 
-  public <T extends AbstractOperator> T addOperator(NodeIdentifier nodeIdentifier, T operator) {
+  public <T extends AbstractOperator> T addOperator(NodeIdentifier nodeIdentifier, Configuration configuration,
+      Class<T> operatorClaz) {
     Preconditions.checkNotNull(nodeIdentifier);
+    Preconditions.checkNotNull(configuration);
+    T operator = OperatorUtils.initiateOperatorInstance(nodeIdentifier, configuration, operatorClaz);
+    return addOperator(operator);
+  }
+
+  /**
+   * Adds the given operator to the DAG. If the DAG has had an operator with the same node identifier as the given
+   * operator, then the existing operator will be returned.
+   *
+   * @param operator the operator to be added to the DAG.
+   *
+   * @return the operator in the DAG.
+   */
+  public <T extends AbstractOperator> T addOperator(T operator) {
     Preconditions.checkNotNull(operator);
+    NodeIdentifier nodeIdentifier = Preconditions.checkNotNull(operator.getNodeIdentifier());
 
     if (operators.containsKey(nodeIdentifier)) {
       return (T) operators.get(nodeIdentifier);
     } else {
-      operator.setNodeIdentifier(nodeIdentifier);
       operators.put(nodeIdentifier, operator);
       return operator;
     }
@@ -70,7 +84,8 @@ public class OperatorDAGBuilder {
   public <T> Channel<T> addChannel(OutputPort<? extends T> sourcePort, InputPort<? super T> sinkPort) {
     final NodeIdentifier sourceIdentity = sourcePort.getOperator().getNodeIdentifier();
     final NodeIdentifier sinkIdentify = sinkPort.getOperator().getNodeIdentifier();
-    Preconditions.checkArgument(!Objects.equals(sourceIdentity, sinkIdentify), "Source and sink operator cannot be the same.");
+    Preconditions.checkArgument(!Objects.equals(sourceIdentity, sinkIdentify), "Source and sink operators "
+        + "cannot be the same.");
 
     Channel.ChannelBuilder<T> builder = new Channel.ChannelBuilder<>();
     builder.setSourcePort(sourcePort).setSourceIdentify(sourceIdentity)

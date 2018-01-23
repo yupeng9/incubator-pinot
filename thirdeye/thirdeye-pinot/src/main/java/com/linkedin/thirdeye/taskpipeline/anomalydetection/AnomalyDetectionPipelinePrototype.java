@@ -16,6 +16,7 @@ import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator2x1;
 import com.linkedin.thirdeye.taskexecution.impl.operatordag.OperatorDAGBuilder;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.MapConfiguration;
 import org.joda.time.Interval;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +79,10 @@ public class AnomalyDetectionPipelinePrototype {
    */
   public static class TimeSeriesFetcher extends Operator0x1<DataFrame> {
 
+    public TimeSeriesFetcher() {
+      super(new NodeIdentifier(""), new MapConfiguration(Collections.emptyMap()));
+    }
+
     public TimeSeriesFetcher(NodeIdentifier nodeIdentifier, Configuration configuration) {
       super(nodeIdentifier, configuration);
     }
@@ -121,6 +127,10 @@ public class AnomalyDetectionPipelinePrototype {
    */
   public static class AnomalyFetcher extends Operator0x1<Map<DimensionMap, List<AnomalyResult>>> {
 
+    public AnomalyFetcher() {
+      super(new NodeIdentifier(""), new MapConfiguration(Collections.emptyMap()));
+    }
+
     public AnomalyFetcher(NodeIdentifier nodeIdentifier, Configuration configuration) {
       super(nodeIdentifier, configuration);
     }
@@ -163,6 +173,10 @@ public class AnomalyDetectionPipelinePrototype {
    */
   public static class AnomalyDetectionOperator
       extends Operator2x1<DataFrame, Map<DimensionMap, List<AnomalyResult>>, Map<DimensionMap, List<AnomalyResult>>> {
+
+    public AnomalyDetectionOperator() {
+      super(new NodeIdentifier(""), new MapConfiguration(Collections.emptyMap()));
+    }
 
     public AnomalyDetectionOperator(NodeIdentifier nodeIdentifier, Configuration configuration) {
       super(nodeIdentifier, configuration);
@@ -219,6 +233,10 @@ public class AnomalyDetectionPipelinePrototype {
    */
   public static class AnomalyMerger
       extends Operator1x1<Map<DimensionMap, List<AnomalyResult>>, Map<DimensionMap, List<AnomalyResult>>> {
+
+    public AnomalyMerger() {
+      super(new NodeIdentifier(""), new MapConfiguration(Collections.emptyMap()));
+    }
 
     public AnomalyMerger(NodeIdentifier nodeIdentifier, Configuration configuration) {
       super(nodeIdentifier, configuration);
