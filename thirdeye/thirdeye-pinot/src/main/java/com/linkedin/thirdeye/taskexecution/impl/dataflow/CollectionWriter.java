@@ -6,6 +6,7 @@ import java.util.Collection;
 
 public class CollectionWriter<T> implements Writer<T> {
   private Collection<T> storage;
+  private volatile boolean isClosed;
 
   public CollectionWriter() {
   }
@@ -21,8 +22,14 @@ public class CollectionWriter<T> implements Writer<T> {
 
   @Override
   public void write(T o) {
+    Preconditions.checkState(!isClosed, "Writer is closed.");
     if (storage != null) {
       storage.add(o);
     }
+  }
+
+  @Override
+  public void close() {
+    isClosed = true;
   }
 }

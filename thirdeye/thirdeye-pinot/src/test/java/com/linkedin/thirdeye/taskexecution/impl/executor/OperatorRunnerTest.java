@@ -7,8 +7,8 @@ import com.linkedin.thirdeye.taskexecution.executor.ExecutionStatus;
 import com.linkedin.thirdeye.taskexecution.executor.NodeConfig;
 import com.linkedin.thirdeye.taskexecution.impl.operator.AbstractOperator;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import java.util.Collections;
+import org.apache.commons.configuration.MapConfiguration;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -101,15 +101,11 @@ public class OperatorRunnerTest {
   public static class DummyOperator extends Operator1x1<Integer, Integer> {
 
     public DummyOperator() {
-      super(new NodeIdentifier());
+      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
     }
 
     public DummyOperator(NodeIdentifier nodeIdentifier) {
-      super(nodeIdentifier);
-    }
-
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
+      super(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override
@@ -125,11 +121,7 @@ public class OperatorRunnerTest {
 
   public static class FailedRunOperator extends AbstractOperator {
     public FailedRunOperator() {
-      super(new NodeIdentifier());
-    }
-
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
+      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override

@@ -45,4 +45,9 @@ public class GenericOutputPort<T> implements OutputPort<T> {
     Preconditions.checkNotNull(storage, "This port is not initialized; Please invoke initialize before this method.");
     return new CollectionReader<>(storage);
   }
+
+  @Override
+  public void setDelegatePort(OutputPort<T> delegatePort) {
+    throw new UnsupportedOperationException();
+  }
 }

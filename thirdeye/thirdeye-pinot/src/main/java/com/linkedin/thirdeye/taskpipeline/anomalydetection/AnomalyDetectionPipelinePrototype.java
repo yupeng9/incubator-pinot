@@ -14,7 +14,7 @@ import com.linkedin.thirdeye.taskexecution.impl.operator.BaseOperatorConfig;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator0x1;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator2x1;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
+import com.linkedin.thirdeye.taskexecution.impl.operatordag.OperatorDAGBuilder;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,15 +44,15 @@ public class AnomalyDetectionPipelinePrototype {
    * AnomalyFetcher --/                                                  \- AnomalyFetcher -/
    */
   public static DAG getDAG() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
 
     TimeSeriesFetcher timeSeriesFetcher =
-        dagBuilder.addOperator(new NodeIdentifier("TimeSeriesFetcher"), new TimeSeriesFetcher());
+        dagBuilder.addOperator(new NodeIdentifier("TimeSeriesFetcher"), TimeSeriesFetcher.class);
 
     AnomalyFetcher anomalyFetcher = dagBuilder.addOperator(new NodeIdentifier("AnomalyFetcher"), AnomalyFetcher.class);
 
     AnomalyDetectionOperator detectionOperator =
-        dagBuilder.addOperator(new NodeIdentifier("AnomalyDetector"), new AnomalyDetectionOperator());
+        dagBuilder.addOperator(new NodeIdentifier("AnomalyDetector"), AnomalyDetectionOperator.class);
 
     AnomalyMerger merger = dagBuilder.addOperator(new NodeIdentifier("Merger"), AnomalyMerger.class);
 
@@ -76,21 +76,14 @@ public class AnomalyDetectionPipelinePrototype {
    * Dummy Time Series Fetcher
    */
   public static class TimeSeriesFetcher extends Operator0x1<DataFrame> {
-    public TimeSeriesFetcher() {
-      // Runtime configuration goes here?
-      //   Parameters that are generated according to job context such as monitoring window, time range intervals, etc.
+
+    public TimeSeriesFetcher(NodeIdentifier nodeIdentifier, Configuration configuration) {
+      super(nodeIdentifier, configuration);
     }
 
     @Override
     public OperatorConfig newOperatorConfigInstance() {
       return new TimeSeriesFetcherConfig();
-    }
-
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
-      // Static configuration goes here
-      //   Parameters that are declare in the configuration file that are stored in some file system.
-      TimeSeriesFetcherConfig config = (TimeSeriesFetcherConfig) operatorConfig;
     }
 
     @Override
@@ -109,8 +102,7 @@ public class AnomalyDetectionPipelinePrototype {
       //      dataFrame.addSeries(next, "testIntegers");
       //      dataFrame.groupByValue("index", "testInteger").aggregate("index:FIRST", "testInteger:FIRST", "testDouble:SUM");
 
-      LOG.info("{} fetched time series {}: {}", getNodeIdentifier(), "testDoubles",
-          dataFrame.toString());
+      LOG.info("{} fetched time series {}: {}", getNodeIdentifier(), "testDoubles", dataFrame.toString());
       getOutputPort().getWriter().write(dataFrame);
     }
 
@@ -120,7 +112,6 @@ public class AnomalyDetectionPipelinePrototype {
       @Override
       public void initialize(Configuration operatorRawConfig, SystemContext systemContext) {
         super.initialize(operatorRawConfig, systemContext);
-
       }
     }
   }
@@ -129,9 +120,9 @@ public class AnomalyDetectionPipelinePrototype {
    * Dummy Anomaly Fetcher
    */
   public static class AnomalyFetcher extends Operator0x1<Map<DimensionMap, List<AnomalyResult>>> {
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
 
+    public AnomalyFetcher(NodeIdentifier nodeIdentifier, Configuration configuration) {
+      super(nodeIdentifier, configuration);
     }
 
     @Override
@@ -173,9 +164,8 @@ public class AnomalyDetectionPipelinePrototype {
   public static class AnomalyDetectionOperator
       extends Operator2x1<DataFrame, Map<DimensionMap, List<AnomalyResult>>, Map<DimensionMap, List<AnomalyResult>>> {
 
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
-
+    public AnomalyDetectionOperator(NodeIdentifier nodeIdentifier, Configuration configuration) {
+      super(nodeIdentifier, configuration);
     }
 
     @Override
@@ -230,9 +220,8 @@ public class AnomalyDetectionPipelinePrototype {
   public static class AnomalyMerger
       extends Operator1x1<Map<DimensionMap, List<AnomalyResult>>, Map<DimensionMap, List<AnomalyResult>>> {
 
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
-
+    public AnomalyMerger(NodeIdentifier nodeIdentifier, Configuration configuration) {
+      super(nodeIdentifier, configuration);
     }
 
     @Override

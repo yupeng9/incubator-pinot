@@ -4,18 +4,19 @@ import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.executor.DAGConfig;
 import com.linkedin.thirdeye.taskexecution.executor.ExecutionEngine;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAG;
-import com.linkedin.thirdeye.taskexecution.impl.physicaldag.PhysicalDAGBuilder;
+import com.linkedin.thirdeye.taskexecution.impl.operatordag.OperatorDAG;
+import com.linkedin.thirdeye.taskexecution.impl.operatordag.OperatorDAGBuilder;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator2x1;
-import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
 import com.linkedin.thirdeye.taskexecution.impl.operator.Operator1x1;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.commons.configuration.MapConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.Assert;
@@ -32,10 +33,10 @@ public class DefaultDAGExecutorTest {
    */
   @Test
   public void testOneNodeExecution() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator start = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
 
-    PhysicalDAG dag = dagBuilder.build();
+    OperatorDAG dag = dagBuilder.build();
 
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
     DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
@@ -54,17 +55,17 @@ public class DefaultDAGExecutorTest {
    */
   @Test
   public void testOneNodeChainExecution() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
     LogOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), LogOperator.class);
     LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
     dagBuilder.addChannel(node1, node2);
     dagBuilder.addChannel(node2.getOutputPort(), node3.getInputPort());
 
-    PhysicalDAG physicalDAG = dagBuilder.build();
+    OperatorDAG operatorDAG = dagBuilder.build();
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
     DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
-    dagExecutor.execute(physicalDAG, new DAGConfig());
+    dagExecutor.execute(operatorDAG, new DAGConfig());
 
     List<String> executionLog = checkAndGetFinalResult(node3);
     List<String> expectedResult = new ArrayList<String>() {{
@@ -88,7 +89,7 @@ public class DefaultDAGExecutorTest {
    */
   @Test
   public void testTwoNodeChainsExecution() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator start1 = dagBuilder.addOperator(new NodeIdentifier("start1"), LogOperator.class);
     LogOperator node12 = dagBuilder.addOperator(new NodeIdentifier("node12"), LogOperator.class);
     LogOperator end1 = dagBuilder.addOperator(new NodeIdentifier("end1"), LogOperator.class);
@@ -106,7 +107,7 @@ public class DefaultDAGExecutorTest {
     dagBuilder.addChannel(node22, node24);
     dagBuilder.addChannel(node24, end2);
 
-    PhysicalDAG dag = dagBuilder.build();
+    OperatorDAG dag = dagBuilder.build();
 
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
     DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
@@ -158,7 +159,7 @@ public class DefaultDAGExecutorTest {
    */
   @Test
   public void testComplexGraphExecution() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator start = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
     LogOperator end = dagBuilder.addOperator(new NodeIdentifier("end"), LogOperator.class);
 
@@ -185,7 +186,7 @@ public class DefaultDAGExecutorTest {
     dagBuilder.addChannel(start, node12);
     dagBuilder.addChannel(node12, end);
 
-    PhysicalDAG dag = dagBuilder.build();
+    OperatorDAG dag = dagBuilder.build();
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
     DefaultDAGExecutor dagExecutor = new DefaultDAGExecutor(executionEngine);
     dagExecutor.execute(dag, new DAGConfig());
@@ -231,14 +232,14 @@ public class DefaultDAGExecutorTest {
    */
   @Test
   public void testFailedChainExecutionNonStopping() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
     FailedOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), FailedOperator.class);
     LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
     dagBuilder.addChannel(node1, node2);
     dagBuilder.addChannel(node2, node3);
 
-    PhysicalDAG dag = dagBuilder.build();
+    OperatorDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(false);
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
@@ -260,14 +261,14 @@ public class DefaultDAGExecutorTest {
    */
   @Test
   public void testFailedChainExecutionWithAborting() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
     FailedOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), FailedOperator.class);
     LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
     dagBuilder.addChannel(node1, node2);
     dagBuilder.addChannel(node2, node3);
 
-    PhysicalDAG dag = dagBuilder.build();
+    OperatorDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
@@ -285,7 +286,7 @@ public class DefaultDAGExecutorTest {
 
   @Test
   public void testStaticTypeChecking() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator stringStringNode = dagBuilder.addOperator(new NodeIdentifier("stringStringNode"), LogOperator.class);
 
     // The following addChannels() should NOT compile because of static type checking
@@ -297,7 +298,7 @@ public class DefaultDAGExecutorTest {
         intStringNumberNode = dagBuilder.addOperator(new NodeIdentifier("intStringNumberNode"), IntStringNumberOperator.class);
     dagBuilder.addChannels(intIntNode, stringStringNode, intStringNumberNode);
 
-    PhysicalDAG dag = dagBuilder.build();
+    OperatorDAG dag = dagBuilder.build();
     DAGConfig dagConfig = new DAGConfig();
     dagConfig.setStopAtFailure(true);
     ExecutionEngine executionEngine = new DefaultExecutionEngine(threadPool);
@@ -307,7 +308,7 @@ public class DefaultDAGExecutorTest {
 
   @Test
   public void testDuplicatedNode() {
-    PhysicalDAGBuilder dagBuilder = new PhysicalDAGBuilder();
+    OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
     LogOperator stringStringNode1 = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
     LogOperator stringStringNode2 = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
     Assert.assertEquals(stringStringNode1, stringStringNode2);
@@ -319,8 +320,8 @@ public class DefaultDAGExecutorTest {
   public static class LogOperator extends Operator1x1<List<String>, List<String>> {
     private static final Logger LOG = LoggerFactory.getLogger(LogOperator.class);
 
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public LogOperator() {
+      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override
@@ -345,8 +346,8 @@ public class DefaultDAGExecutorTest {
    * An operator that always fails.
    */
   public static class FailedOperator extends Operator1x1<List<String>, List<String>> {
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public FailedOperator() {
+      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override
@@ -359,8 +360,8 @@ public class DefaultDAGExecutorTest {
    * An operator for testing incompatible input and output port type.
    */
   public static class IntIntOperator extends Operator1x1<Integer, Integer> {
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public IntIntOperator() {
+      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override
@@ -369,8 +370,8 @@ public class DefaultDAGExecutorTest {
   }
 
   public static class IntStringNumberOperator extends Operator2x1<Integer, List<String>, Number> {
-    @Override
-    public void initialize(OperatorConfig operatorConfig) {
+    public IntStringNumberOperator() {
+      super(new NodeIdentifier(), new MapConfiguration(Collections.emptyMap()));
     }
 
     @Override

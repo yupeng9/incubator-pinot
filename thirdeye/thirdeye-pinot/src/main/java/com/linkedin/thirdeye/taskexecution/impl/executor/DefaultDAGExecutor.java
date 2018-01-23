@@ -2,7 +2,6 @@ package com.linkedin.thirdeye.taskexecution.impl.executor;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
-import com.linkedin.thirdeye.taskexecution.dag.Edge;
 import com.linkedin.thirdeye.taskexecution.dag.Node;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.executor.DAGExecutor;
@@ -40,6 +39,7 @@ public class DefaultDAGExecutor implements DAGExecutor {
     this.executionEngine = executionEngine;
   }
 
+  // TODO: move DAG field to constructor and remove dagConfig, which should be passed to Node when constructing the DAG.
   public void execute(DAG dag, DAGConfig dagConfig) {
     Collection<? extends Node> nodes = dag.getStartNodes();
     for (Node node : nodes) {
@@ -77,9 +77,8 @@ public class DefaultDAGExecutor implements DAGExecutor {
     // TODO: wait all runners are stopped and clean up intermediate data
   }
 
-  private void checkAndRunNode(Node node, DAGConfig dagConfig,
-      Set<? extends Node> upstreamDependency) {
-    if (!isFinished(node) && parentsAreFinished(upstreamDependency)) {
+  private void checkAndRunNode(Node node, DAGConfig dagConfig, Set<? extends Node> upstreamDependency) {
+    if (!isFinished(node) && !isRunning(node) && parentsAreFinished(upstreamDependency)) {
       LOG.info("Submitting node -- {} -- for execution.", node.getIdentifier().toString());
       NodeConfig nodeConfig = dagConfig.getNodeConfig(node.getIdentifier());
       ExecutionContext executionContext = new ExecutionContext(node, nodeConfig);
@@ -91,6 +90,10 @@ public class DefaultDAGExecutor implements DAGExecutor {
 
   private boolean isFinished(Node node) {
     return processedNodes.contains(node.getIdentifier());
+  }
+
+  private boolean isRunning(Node node) {
+    return runningNodes.contains(node.getIdentifier());
   }
 
   private boolean parentsAreFinished(Set<? extends Node> upstreamDependency) {

@@ -58,4 +58,16 @@ public interface DAG {
    * @return all nodes in the DAG.
    */
   Collection<? extends Node> getAllNodes();
+
+  /**
+   * Changes the namespace of all nodes.
+   */
+  void changeNamespace(String namespace);
+
+  /**
+   * Adds the given namespace to the namespace of all nodes.
+   *
+   * @param parentNamespace the namespace to be added to the begin of nodes' namespace.
+   */
+  void addParentNamespace(String parentNamespace);
 }

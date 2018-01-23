@@ -1,20 +1,21 @@
-package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
+package com.linkedin.thirdeye.taskexecution.impl.operatordag;
 
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.linkedin.thirdeye.taskexecution.dag.DAG;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class PhysicalDAG implements DAG {
-  private Map<NodeIdentifier, PhysicalNode> rootNodes = new HashMap<>();
-  private Map<NodeIdentifier, PhysicalNode> leafNodes = new HashMap<>();
-  private Map<NodeIdentifier, PhysicalNode> nodes = new HashMap<>();
+public class OperatorDAG implements DAG {
+  private Map<NodeIdentifier, OperatorNode> nodes = new HashMap<>();
 
   /**
    * Add the given node if it has not been inserted to this DAG and returns the node that has the same {@link
@@ -24,7 +25,7 @@ public class PhysicalDAG implements DAG {
    *
    * @return the node that is just being added or the existing node that has the same {@link NodeIdentifier}.
    */
-  PhysicalNode addNode(PhysicalNode node) {
+  OperatorNode addNode(OperatorNode node) {
     Preconditions.checkNotNull(node, "Unable to add an null node.");
     return getOrAdd(node);
   }
@@ -36,7 +37,7 @@ public class PhysicalDAG implements DAG {
    * @param source the source node.
    * @param sink the sink node.
    */
-  void addExecutionDependency(PhysicalNode source, PhysicalNode sink) {
+  void addExecutionDependency(OperatorNode source, OperatorNode sink) {
     Preconditions.checkNotNull(source, "Unable to add an null source.");
     Preconditions.checkNotNull(sink, "Unable to add an null sink.");
     source = getOrAdd(source);
@@ -51,8 +52,8 @@ public class PhysicalDAG implements DAG {
    * @param channel the channel that specified the output port of source and input port of sink.
    */
   void addChannel(Channel channel) {
-    PhysicalNode source = getNode(channel.getSourceIdentifier());
-    PhysicalNode sink = getNode(channel.getSinkIdentifier());
+    OperatorNode source = getNode(channel.getSourceIdentifier());
+    OperatorNode sink = getNode(channel.getSinkIdentifier());
     Preconditions.checkNotNull(source, "Source node '%s' doesn't exist in DAG.", channel.getSourceIdentifier());
     Preconditions.checkNotNull(sink, "Sink node '%s' doesn't exist in DAG.", channel.getSinkIdentifier());
     Preconditions.checkArgument(!Objects.equals(source, sink), "Source and sink node cannot be the same.");
@@ -68,15 +69,9 @@ public class PhysicalDAG implements DAG {
    * @param source the source node.
    * @param sink the sink node.
    */
-  private void addNodeDependency(PhysicalNode source, PhysicalNode sink) {
+  private void addNodeDependency(OperatorNode source, OperatorNode sink) {
     source.addOutgoingNode(sink);
-    if (leafNodes.containsKey(source.getIdentifier())) {
-      leafNodes.remove(source.getIdentifier());
-    }
     sink.addIncomingNode(source);
-    if (rootNodes.containsKey(sink.getIdentifier())) {
-      rootNodes.remove(sink.getIdentifier());
-    }
   }
 
   /**
@@ -87,12 +82,10 @@ public class PhysicalDAG implements DAG {
    *
    * @return the node with the same {@link NodeIdentifier}.
    */
-  private PhysicalNode getOrAdd(PhysicalNode node) {
+  private OperatorNode getOrAdd(OperatorNode node) {
     NodeIdentifier nodeIdentifier = node.getIdentifier();
     if (!nodes.containsKey(nodeIdentifier)) {
       nodes.put(nodeIdentifier, node);
-      rootNodes.put(nodeIdentifier, node);
-      leafNodes.put(nodeIdentifier, node);
       return node;
     } else {
       return nodes.get(nodeIdentifier);
@@ -100,14 +93,14 @@ public class PhysicalDAG implements DAG {
   }
 
   @Override
-  public PhysicalNode getNode(NodeIdentifier nodeIdentifier) {
+  public OperatorNode getNode(NodeIdentifier nodeIdentifier) {
     Preconditions.checkNotNull(nodeIdentifier);
     return nodes.get(nodeIdentifier);
   }
 
   @Override
-  public Set<PhysicalNode> getParents(NodeIdentifier nodeIdentifier) {
-    PhysicalNode node = getNode(nodeIdentifier);
+  public Set<OperatorNode> getParents(NodeIdentifier nodeIdentifier) {
+    OperatorNode node = getNode(nodeIdentifier);
     if (node != null) {
       return node.getIncomingNodes();
     } else {
@@ -116,8 +109,8 @@ public class PhysicalDAG implements DAG {
   }
 
   @Override
-  public Set<PhysicalNode> getChildren(NodeIdentifier nodeIdentifier) {
-    PhysicalNode node = getNode(nodeIdentifier);
+  public Set<OperatorNode> getChildren(NodeIdentifier nodeIdentifier) {
+    OperatorNode node = getNode(nodeIdentifier);
     if (node != null) {
       return node.getOutgoingNodes();
     } else {
@@ -131,17 +124,51 @@ public class PhysicalDAG implements DAG {
   }
 
   @Override
-  public Collection<PhysicalNode> getStartNodes() {
-    return new HashSet<>(rootNodes.values());
+  public Collection<OperatorNode> getStartNodes() {
+    ImmutableList.Builder<OperatorNode> listBuilder = ImmutableList.builder();
+    for (OperatorNode operatorNode : nodes.values()) {
+      if (operatorNode.getIncomingNodes().size() == 0) {
+        listBuilder.add(operatorNode);
+      }
+    }
+    return listBuilder.build();
   }
 
   @Override
-  public Collection<PhysicalNode> getEndNodes() {
-    return new HashSet<>(leafNodes.values());
+  public Collection<OperatorNode> getEndNodes() {
+    ImmutableList.Builder<OperatorNode> listBuilder = ImmutableList.builder();
+    for (OperatorNode operatorNode : nodes.values()) {
+      if (operatorNode.getOutgoingNodes().size() == 0) {
+        listBuilder.add(operatorNode);
+      }
+    }
+    return listBuilder.build();
   }
 
   @Override
-  public Collection<PhysicalNode> getAllNodes() {
+  public Collection<OperatorNode> getAllNodes() {
     return new HashSet<>(nodes.values());
+  }
+
+  @Override
+  public void changeNamespace(String namespace) {
+    List<OperatorNode> values = new ArrayList<>(nodes.values());
+    nodes.clear();
+    for (OperatorNode node : values) {
+      NodeIdentifier identifier = node.getIdentifier();
+      identifier.setNamespace(namespace);
+      nodes.put(identifier, node);
+    }
+  }
+
+  @Override
+  public void addParentNamespace(String namespace) {
+    List<OperatorNode> values = new ArrayList<>(nodes.values());
+    nodes.clear();
+    for (OperatorNode node : values) {
+      NodeIdentifier identifier = node.getIdentifier();
+      identifier.addParentNamespace(namespace);
+      nodes.put(identifier, node);
+    }
   }
 }

@@ -46,4 +46,9 @@ public class GenericInputPort<T> implements InputPort<T> {
     Preconditions.checkNotNull(builder, "This port is not initialized; please invoke initialize before this method.");
     return builder.build();
   }
+
+  @Override
+  public void setDelegatePort(InputPort<T> delegatePort) {
+    throw new UnsupportedOperationException();
+  }
 }

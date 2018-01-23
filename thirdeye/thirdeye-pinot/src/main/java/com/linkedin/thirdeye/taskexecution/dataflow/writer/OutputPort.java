@@ -14,4 +14,12 @@ public interface OutputPort<T> {
 
   // Used by executor
   Reader<T> getReader();
+
+  /**
+   * Sets a delegate port for this port; all actions of this port will be performed by the delegate port, except
+   * getOperator().
+   *
+   * @param delegatePort the delegate port of this port.
+   */
+  void setDelegatePort(OutputPort<T> delegatePort);
 }

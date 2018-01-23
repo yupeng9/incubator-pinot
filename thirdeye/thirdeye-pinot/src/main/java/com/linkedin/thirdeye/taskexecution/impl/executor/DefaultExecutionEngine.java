@@ -31,12 +31,9 @@ public class DefaultExecutionEngine implements ExecutionEngine {
   public void submit(ExecutionContext executionContext) {
     Preconditions.checkNotNull(executionContext);
 
-    final Node node = executionContext.getNode();
-    final NodeIdentifier nodeIdentifier = node.getIdentifier();
-    final NodeConfig nodeConfig = executionContext.getNodeConfig();
-    Preconditions.checkNotNull(node);
-    Preconditions.checkNotNull(nodeIdentifier);
-    Preconditions.checkNotNull(nodeConfig);
+    final Node node = Preconditions.checkNotNull(executionContext.getNode());
+    final NodeIdentifier nodeIdentifier = Preconditions.checkNotNull(node.getIdentifier());
+    final NodeConfig nodeConfig = Preconditions.checkNotNull(executionContext.getNodeConfig());
 
     OperatorRunner runner = createOperatorRunner(node, nodeConfig);
     executorCompletionService.submit(runner);

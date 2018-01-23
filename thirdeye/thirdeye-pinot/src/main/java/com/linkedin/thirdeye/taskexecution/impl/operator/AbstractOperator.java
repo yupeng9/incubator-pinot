@@ -4,20 +4,24 @@ import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.operator.Operator;
 import com.linkedin.thirdeye.taskexecution.operator.OperatorConfig;
+import org.apache.commons.configuration.Configuration;
+
 
 public abstract class AbstractOperator implements Operator {
   private NodeIdentifier nodeIdentifier;
+  protected Configuration configuration;
 
-  public AbstractOperator() {
-  }
-
-  public AbstractOperator(NodeIdentifier nodeIdentifier) {
+  public AbstractOperator(NodeIdentifier nodeIdentifier, Configuration configuration) {
     setNodeIdentifier(nodeIdentifier);
+    setConfiguration(configuration);
   }
 
   public final void setNodeIdentifier(NodeIdentifier nodeIdentifier) {
-    Preconditions.checkNotNull(nodeIdentifier);
-    this.nodeIdentifier = nodeIdentifier;
+    this.nodeIdentifier = Preconditions.checkNotNull(nodeIdentifier);
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = Preconditions.checkNotNull(configuration);
   }
 
   @Override

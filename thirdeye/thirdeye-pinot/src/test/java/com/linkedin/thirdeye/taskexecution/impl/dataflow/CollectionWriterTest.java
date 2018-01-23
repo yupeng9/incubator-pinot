@@ -30,4 +30,11 @@ public class CollectionWriterTest {
     Assert.assertEquals((int) iterator.next(), 2);
   }
 
+  @Test(expectedExceptions = IllegalStateException.class)
+  public void testClose() {
+    CollectionWriter<Integer> writer = new CollectionWriter<>();
+    writer.close();
+    writer.write(1);
+  }
+
 }

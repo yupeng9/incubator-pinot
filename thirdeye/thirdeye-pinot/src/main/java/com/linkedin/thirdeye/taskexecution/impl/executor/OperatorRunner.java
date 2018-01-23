@@ -65,13 +65,6 @@ public class OperatorRunner implements Callable<ExecutionResult> {
     }
   }
 
-  private static OperatorConfig initializeOperatorConfigFromNodeConfig(Operator operator, NodeConfig nodeConfig,
-      SystemContext systemContext) {
-    OperatorConfig operatorConfig = operator.newOperatorConfigInstance();
-    operatorConfig.initialize(nodeConfig.getRawOperatorConfig(), systemContext);
-    return operatorConfig;
-  }
-
   /**
    * Invokes the execution of the operator that is define for the corresponding node in the DAG and returns its node
    * identifier.
@@ -92,9 +85,6 @@ public class OperatorRunner implements Callable<ExecutionResult> {
             channel.prepareInputPortContext();
           }
 
-          // Initialize operator
-          OperatorConfig operatorConfig = initializeOperatorConfigFromNodeConfig(operator, nodeConfig, systemContext);
-          operator.initialize(operatorConfig);
           // Run operator
           operator.run();
 

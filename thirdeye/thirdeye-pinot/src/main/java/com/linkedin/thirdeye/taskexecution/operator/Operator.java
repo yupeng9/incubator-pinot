@@ -10,8 +10,6 @@ public interface Operator {
 
   void initializeIOPorts();
 
-  void initialize(OperatorConfig operatorConfig);
-
   void run();
 
 }

@@ -1,4 +1,4 @@
-package com.linkedin.thirdeye.taskexecution.impl.physicaldag;
+package com.linkedin.thirdeye.taskexecution.impl.operatordag;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
@@ -15,11 +15,11 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
 
-public class PhysicalDAGBuilder {
+public class OperatorDAGBuilder {
   private Map<NodeIdentifier, Operator> operators;
   private Map<Channel, Channel> channels;
 
-  public PhysicalDAGBuilder() {
+  public OperatorDAGBuilder() {
     initBuild();
   }
 
@@ -84,12 +84,11 @@ public class PhysicalDAGBuilder {
     }
   }
 
-  public PhysicalDAG build() {
-    PhysicalDAG dag = new PhysicalDAG();
+  public OperatorDAG build() {
+    OperatorDAG dag = new OperatorDAG();
     for (Map.Entry<NodeIdentifier, Operator> identifierOperatorPair : operators.entrySet()) {
-      NodeIdentifier identifier = identifierOperatorPair.getKey();
       Operator operator = identifierOperatorPair.getValue();
-      dag.addNode(new PhysicalNode(identifier, operator));
+      dag.addNode(new OperatorNode(operator));
     }
     for (Channel channel : channels.values()) {
       dag.addChannel(channel);
