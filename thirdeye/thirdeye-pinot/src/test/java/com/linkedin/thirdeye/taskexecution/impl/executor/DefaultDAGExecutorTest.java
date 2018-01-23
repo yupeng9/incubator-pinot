@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.MapConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,8 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testOneNodeExecution() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator start = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
+    LogOperator start = dagBuilder
+        .addOperator("start", new MapConfiguration(Collections.emptyMap()), LogOperator.class);
 
     OperatorDAG dag = dagBuilder.build();
 
@@ -56,9 +58,9 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testOneNodeChainExecution() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
-    LogOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), LogOperator.class);
-    LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
+    LogOperator node1 = dagBuilder.addOperator("1", LogOperator.class);
+    LogOperator node2 = dagBuilder.addOperator("2", LogOperator.class);
+    LogOperator node3 = dagBuilder.addOperator("3", LogOperator.class);
     dagBuilder.addChannel(node1, node2);
     dagBuilder.addChannel(node2.getOutputPort(), node3.getInputPort());
 
@@ -90,17 +92,17 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testTwoNodeChainsExecution() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator start1 = dagBuilder.addOperator(new NodeIdentifier("start1"), LogOperator.class);
-    LogOperator node12 = dagBuilder.addOperator(new NodeIdentifier("node12"), LogOperator.class);
-    LogOperator end1 = dagBuilder.addOperator(new NodeIdentifier("end1"), LogOperator.class);
+    LogOperator start1 = dagBuilder.addOperator("start1", LogOperator.class);
+    LogOperator node12 = dagBuilder.addOperator("node12", LogOperator.class);
+    LogOperator end1 = dagBuilder.addOperator("end1", LogOperator.class);
     dagBuilder.addChannel(start1, node12);
     dagBuilder.addChannel(node12, end1);
 
-    LogOperator start2 = dagBuilder.addOperator(new NodeIdentifier("start2"), LogOperator.class);
-    LogOperator node22 = dagBuilder.addOperator(new NodeIdentifier("node22"), LogOperator.class);
-    LogOperator node23 = dagBuilder.addOperator(new NodeIdentifier("node23"), LogOperator.class);
-    LogOperator node24 = dagBuilder.addOperator(new NodeIdentifier("node24"), LogOperator.class);
-    LogOperator end2 = dagBuilder.addOperator(new NodeIdentifier("end2"), LogOperator.class);
+    LogOperator start2 = dagBuilder.addOperator("start2", LogOperator.class);
+    LogOperator node22 = dagBuilder.addOperator("node22", LogOperator.class);
+    LogOperator node23 = dagBuilder.addOperator("node23", LogOperator.class);
+    LogOperator node24 = dagBuilder.addOperator("node24", LogOperator.class);
+    LogOperator end2 = dagBuilder.addOperator("end2", LogOperator.class);
     dagBuilder.addChannel(start2, node22);
     dagBuilder.addChannel(node22, node23);
     dagBuilder.addChannel(node23, end2);
@@ -160,16 +162,16 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testComplexGraphExecution() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator start = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
-    LogOperator end = dagBuilder.addOperator(new NodeIdentifier("end"), LogOperator.class);
+    LogOperator start = dagBuilder.addOperator("start", LogOperator.class);
+    LogOperator end = dagBuilder.addOperator("end", LogOperator.class);
 
     // sub-path 2
-    LogOperator node22 = dagBuilder.addOperator(new NodeIdentifier("22"), LogOperator.class);
-    LogOperator node23 = dagBuilder.addOperator(new NodeIdentifier("23"), LogOperator.class);
-    LogOperator node24 = dagBuilder.addOperator(new NodeIdentifier("24"), LogOperator.class);
-    LogOperator node25 = dagBuilder.addOperator(new NodeIdentifier("25"), LogOperator.class);
-    LogOperator node26 = dagBuilder.addOperator(new NodeIdentifier("26"), LogOperator.class);
-    LogOperator node27 = dagBuilder.addOperator(new NodeIdentifier("27"), LogOperator.class);
+    LogOperator node22 = dagBuilder.addOperator("22", LogOperator.class);
+    LogOperator node23 = dagBuilder.addOperator("23", LogOperator.class);
+    LogOperator node24 = dagBuilder.addOperator("24", LogOperator.class);
+    LogOperator node25 = dagBuilder.addOperator("25", LogOperator.class);
+    LogOperator node26 = dagBuilder.addOperator("26", LogOperator.class);
+    LogOperator node27 = dagBuilder.addOperator("27", LogOperator.class);
     dagBuilder.addChannel(start, node22);
     dagBuilder.addChannel(start, node22);
     dagBuilder.addChannel(node22, node23);
@@ -182,7 +184,7 @@ public class DefaultDAGExecutorTest {
     dagBuilder.addChannel(node27, end);
 
     // sub-path 1
-    LogOperator node12 = dagBuilder.addOperator(new NodeIdentifier("12"), LogOperator.class);
+    LogOperator node12 = dagBuilder.addOperator("12", LogOperator.class);
     dagBuilder.addChannel(start, node12);
     dagBuilder.addChannel(node12, end);
 
@@ -233,9 +235,9 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testFailedChainExecutionNonStopping() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
-    FailedOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), FailedOperator.class);
-    LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
+    LogOperator node1 = dagBuilder.addOperator("1", LogOperator.class);
+    FailedOperator node2 = dagBuilder.addOperator("2", FailedOperator.class);
+    LogOperator node3 = dagBuilder.addOperator("3", LogOperator.class);
     dagBuilder.addChannel(node1, node2);
     dagBuilder.addChannel(node2, node3);
 
@@ -262,9 +264,9 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testFailedChainExecutionWithAborting() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator node1 = dagBuilder.addOperator(new NodeIdentifier("1"), LogOperator.class);
-    FailedOperator node2 = dagBuilder.addOperator(new NodeIdentifier("2"), FailedOperator.class);
-    LogOperator node3 = dagBuilder.addOperator(new NodeIdentifier("3"), LogOperator.class);
+    LogOperator node1 = dagBuilder.addOperator("1", LogOperator.class);
+    FailedOperator node2 = dagBuilder.addOperator("2", FailedOperator.class);
+    LogOperator node3 = dagBuilder.addOperator("3", LogOperator.class);
     dagBuilder.addChannel(node1, node2);
     dagBuilder.addChannel(node2, node3);
 
@@ -287,15 +289,15 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testStaticTypeChecking() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator stringStringNode = dagBuilder.addOperator(new NodeIdentifier("stringStringNode"), LogOperator.class);
+    LogOperator stringStringNode = dagBuilder.addOperator("stringStringNode", LogOperator.class);
 
     // The following addChannels() should NOT compile because of static type checking
-    IntIntOperator intIntNode = dagBuilder.addOperator(new NodeIdentifier("intIntNode"), IntIntOperator.class);
+    IntIntOperator intIntNode = dagBuilder.addOperator("intIntNode", IntIntOperator.class);
 //    dagBuilder.addChannel(stringStringNode, intIntNode);
 //    dagBuilder.addChannel(stringStringNode.getOutputPort(), intIntNode.getInputPort());
 
     IntStringNumberOperator
-        intStringNumberNode = dagBuilder.addOperator(new NodeIdentifier("intStringNumberNode"), IntStringNumberOperator.class);
+        intStringNumberNode = dagBuilder.addOperator("intStringNumberNode", IntStringNumberOperator.class);
     dagBuilder.addChannels(intIntNode, stringStringNode, intStringNumberNode);
 
     OperatorDAG dag = dagBuilder.build();
@@ -309,8 +311,8 @@ public class DefaultDAGExecutorTest {
   @Test
   public void testDuplicatedNode() {
     OperatorDAGBuilder dagBuilder = new OperatorDAGBuilder();
-    LogOperator stringStringNode1 = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
-    LogOperator stringStringNode2 = dagBuilder.addOperator(new NodeIdentifier("start"), LogOperator.class);
+    LogOperator stringStringNode1 = dagBuilder.addOperator("start", LogOperator.class);
+    LogOperator stringStringNode2 = dagBuilder.addOperator("start", LogOperator.class);
     Assert.assertEquals(stringStringNode1, stringStringNode2);
   }
 
@@ -322,6 +324,10 @@ public class DefaultDAGExecutorTest {
 
     public LogOperator(NodeIdentifier nodeIdentifier) {
       super(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
+    }
+
+    public LogOperator(NodeIdentifier nodeIdentifier, Configuration configuration) {
+      super(nodeIdentifier, configuration);
     }
 
     @Override

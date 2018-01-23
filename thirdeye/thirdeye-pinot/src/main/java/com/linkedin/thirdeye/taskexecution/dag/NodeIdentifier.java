@@ -12,7 +12,7 @@ import org.apache.commons.lang.StringUtils;
 
 /**
  * An identifier to stores the name of a node or an operator. Note that this class is mutable because the namespace of
- * an identifier could be updated. Be caution when using this class as hash keys.
+ * an identifier could be updated: Be caution when using this class as hash keys.
  */
 public class NodeIdentifier {
   public static final String NAMESPACE_SEPARATOR = ":";

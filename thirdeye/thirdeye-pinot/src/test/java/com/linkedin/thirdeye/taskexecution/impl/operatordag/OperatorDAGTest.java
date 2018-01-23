@@ -111,7 +111,7 @@ public class OperatorDAGTest {
     {
       Assert.assertEquals(operatorNode1.getIdentifier().getNamespace(),
           parentsNamespace + NodeIdentifier.NAMESPACE_SEPARATOR + operatorNamespace);
-      OperatorNode next = operatorNode1.getOutgoingNodes().iterator().next();
+      OperatorNode next = dag.getNode(operatorNode1.getOutgoingNodes().iterator().next());
       Assert.assertEquals(next.getIdentifier().getFullName(),
           parentsNamespace + NodeIdentifier.NAMESPACE_SEPARATOR + operatorNamespace + NodeIdentifier.NAMESPACE_SEPARATOR
               + "name2");
@@ -120,7 +120,7 @@ public class OperatorDAGTest {
     {
       Assert.assertEquals(operatorNode2.getIdentifier().getNamespace(),
           parentsNamespace + NodeIdentifier.NAMESPACE_SEPARATOR + operatorNamespace);
-      OperatorNode previous = operatorNode2.getIncomingNodes().iterator().next();
+      OperatorNode previous = dag.getNode(operatorNode2.getIncomingNodes().iterator().next());
       Assert.assertEquals(previous.getIdentifier().getFullName(),
           parentsNamespace + NodeIdentifier.NAMESPACE_SEPARATOR + operatorNamespace + NodeIdentifier.NAMESPACE_SEPARATOR
               + "name1");

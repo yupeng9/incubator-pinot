@@ -12,13 +12,13 @@ import java.util.Set;
 /**
  * A OperatorNode that executes work using one partition.
  */
-public class OperatorNode implements Node<OperatorNode, Channel> {
+public class OperatorNode implements Node<Channel> {
 
   protected NodeIdentifier nodeIdentifier = new NodeIdentifier();
   private Operator operator;
 
-  private Set<OperatorNode> incomingNode = new HashSet<>();
-  private Set<OperatorNode> outgoingNode = new HashSet<>();
+  private Set<NodeIdentifier> incomingNode = new HashSet<>();
+  private Set<NodeIdentifier> outgoingNode = new HashSet<>();
   private Set<Channel> incomingEdge = new HashSet<>();
   private Set<Channel> outgoingEdge = new HashSet<>();
 
@@ -36,23 +36,23 @@ public class OperatorNode implements Node<OperatorNode, Channel> {
     this.nodeIdentifier = nodeIdentifier;
   }
 
-  public void addIncomingNode(OperatorNode node) {
-    Preconditions.checkNotNull(node);
-    Preconditions.checkArgument(node != this);
-    incomingNode.add(node);
+  public void addIncomingNode(NodeIdentifier nodeIdentifier) {
+    Preconditions.checkNotNull(nodeIdentifier);
+    Preconditions.checkArgument(!nodeIdentifier.equals(this.nodeIdentifier), "Cannot add self as a incoming node.");
+    incomingNode.add(nodeIdentifier);
   }
 
-  public void addOutgoingNode(OperatorNode node) {
-    Preconditions.checkNotNull(node);
-    Preconditions.checkArgument(node != this);
-    outgoingNode.add(node);
+  public void addOutgoingNode(NodeIdentifier nodeIdentifier) {
+    Preconditions.checkNotNull(nodeIdentifier);
+    Preconditions.checkArgument(!nodeIdentifier.equals(this.nodeIdentifier), "Cannot add self as a outgoing node.");
+    outgoingNode.add(nodeIdentifier);
   }
 
-  public Set<OperatorNode> getIncomingNodes() {
+  public Set<NodeIdentifier> getIncomingNodes() {
     return incomingNode;
   }
 
-  public Set<OperatorNode> getOutgoingNodes() {
+  public Set<NodeIdentifier> getOutgoingNodes() {
     return outgoingNode;
   }
 

@@ -1,5 +1,6 @@
 package com.linkedin.thirdeye.taskexecution.impl.dataflow;
 
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -8,7 +9,7 @@ import org.testng.annotations.Test;
 public class GenericInputPortTest {
   @Test
   public void testEmptyCreation() {
-    GenericInputPort<Integer> port = new GenericInputPort<>();
+    GenericInputPort<Integer> port = new GenericInputPort<>(new NodeIdentifier());
     port.initialize();
 
     Reader<Integer> reader = port.getReader();
@@ -17,7 +18,7 @@ public class GenericInputPortTest {
 
   @Test
   public void testCreation() {
-    GenericInputPort<Integer> port = new GenericInputPort<>();
+    GenericInputPort<Integer> port = new GenericInputPort<>(new NodeIdentifier(""));
     port.initialize();
 
     CollectionReader.Builder<Integer> builder1 = CollectionReader.builder();

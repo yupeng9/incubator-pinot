@@ -47,7 +47,7 @@ public class DefaultExecutionEngine implements ExecutionEngine {
     return executionResult;
   }
 
-  private OperatorRunner createOperatorRunner(Node<?, ? extends Edge> node, NodeConfig nodeConfig) {
+  private OperatorRunner createOperatorRunner(Node<? extends Edge> node, NodeConfig nodeConfig) {
     // Set up incoming channels for the runner
     OperatorRunner runner = new OperatorRunner(node.getOperator(), nodeConfig);
     Set<OperatorIOChannel> incomingChannels = new HashSet<>();

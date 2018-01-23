@@ -7,10 +7,11 @@ import org.apache.commons.configuration.Configuration;
 
 
 public abstract class Operator1x1<IN, OUT> extends Operator0x1<OUT> {
-  private final InputPort<IN> inputPort = new GenericInputPort<>(this);
+  private final InputPort<IN> inputPort;
 
   public Operator1x1(NodeIdentifier nodeIdentifier, Configuration configuration) {
     super(nodeIdentifier, configuration);
+    inputPort = new GenericInputPort<>(nodeIdentifier);
   }
 
   public InputPort<IN> getInputPort() {

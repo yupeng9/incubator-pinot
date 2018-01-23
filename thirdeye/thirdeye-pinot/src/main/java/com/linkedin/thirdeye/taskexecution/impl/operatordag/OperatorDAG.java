@@ -70,8 +70,8 @@ public class OperatorDAG implements DAG {
    * @param sink the sink node.
    */
   private void addNodeDependency(OperatorNode source, OperatorNode sink) {
-    source.addOutgoingNode(sink);
-    sink.addIncomingNode(source);
+    source.addOutgoingNode(sink.getIdentifier());
+    sink.addIncomingNode(source.getIdentifier());
   }
 
   /**
@@ -102,7 +102,12 @@ public class OperatorDAG implements DAG {
   public Set<OperatorNode> getParents(NodeIdentifier nodeIdentifier) {
     OperatorNode node = getNode(nodeIdentifier);
     if (node != null) {
-      return node.getIncomingNodes();
+      Set<NodeIdentifier> incomingNodeIdentifiers = node.getIncomingNodes();
+      Set<OperatorNode> parents = new HashSet<>();
+      for (NodeIdentifier incomingNodeIdentifier : incomingNodeIdentifiers) {
+        parents.add(getNode(incomingNodeIdentifier));
+      }
+      return parents;
     } else {
       return Collections.emptySet();
     }
@@ -112,7 +117,12 @@ public class OperatorDAG implements DAG {
   public Set<OperatorNode> getChildren(NodeIdentifier nodeIdentifier) {
     OperatorNode node = getNode(nodeIdentifier);
     if (node != null) {
-      return node.getOutgoingNodes();
+      Set<NodeIdentifier> outgoingNodeIdentifiers = node.getOutgoingNodes();
+      Set<OperatorNode> parents = new HashSet<>();
+      for (NodeIdentifier outgoingNodeIdentifier : outgoingNodeIdentifiers) {
+        parents.add(getNode(outgoingNodeIdentifier));
+      }
+      return parents;
     } else {
       return Collections.emptySet();
     }

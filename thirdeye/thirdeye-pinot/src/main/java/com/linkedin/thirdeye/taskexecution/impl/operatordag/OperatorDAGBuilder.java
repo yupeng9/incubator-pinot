@@ -30,9 +30,12 @@ public class OperatorDAGBuilder {
   }
 
   public <T extends AbstractOperator> T addOperator(String nodeName, Class<T> operatorClaz) {
-    Preconditions.checkNotNull(nodeName);
-    T operator = OperatorUtils.initiateOperatorInstance(new NodeIdentifier(nodeName), operatorClaz);
-    return addOperator(operator);
+    return addOperator(new NodeIdentifier(nodeName), operatorClaz);
+  }
+
+  public <T extends AbstractOperator> T addOperator(String nodeName, Configuration configuration,
+      Class<T> operatorClaz) {
+    return addOperator(new NodeIdentifier(nodeName), configuration, operatorClaz);
   }
 
   public <T extends AbstractOperator> T addOperator(NodeIdentifier nodeIdentifier, Class<T> operatorClaz) {
@@ -82,10 +85,9 @@ public class OperatorDAGBuilder {
   }
 
   public <T> Channel<T> addChannel(OutputPort<? extends T> sourcePort, InputPort<? super T> sinkPort) {
-    final NodeIdentifier sourceIdentity = sourcePort.getOperator().getNodeIdentifier();
-    final NodeIdentifier sinkIdentify = sinkPort.getOperator().getNodeIdentifier();
-    Preconditions.checkArgument(!Objects.equals(sourceIdentity, sinkIdentify), "Source and sink operators "
-        + "cannot be the same.");
+    final NodeIdentifier sourceIdentity = sourcePort.getNodeIdentifier();
+    final NodeIdentifier sinkIdentify = sinkPort.getNodeIdentifier();
+    Preconditions.checkArgument(!Objects.equals(sourceIdentity, sinkIdentify), "Source and sink operator cannot be the same.");
 
     Channel.ChannelBuilder<T> builder = new Channel.ChannelBuilder<>();
     builder.setSourcePort(sourcePort).setSourceIdentify(sourceIdentity)

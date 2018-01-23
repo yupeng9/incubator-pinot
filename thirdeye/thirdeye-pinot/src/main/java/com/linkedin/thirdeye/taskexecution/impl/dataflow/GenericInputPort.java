@@ -1,29 +1,26 @@
 package com.linkedin.thirdeye.taskexecution.impl.dataflow;
 
 import com.google.common.base.Preconditions;
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.InputPort;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
 
 public class GenericInputPort<T> implements InputPort<T> {
-  private Operator operator;
+  private NodeIdentifier nodeIdentifier;
   private CollectionReader.Builder<T> builder;
 
-  public GenericInputPort() {
-  }
-
-  public GenericInputPort(Operator operator) {
-    setOperator(operator);
-  }
-
-  public void setOperator(Operator operator) {
-    Preconditions.checkNotNull(operator);
-    this.operator = operator;
+  /**
+   * Constructs a input port that is associated to the node or the operator with the given node identifier.
+   *
+   * @param nodeIdentifier the node identifier of the node or operator with which the port is associated.
+   */
+  public GenericInputPort(NodeIdentifier nodeIdentifier) {
+    this.nodeIdentifier = Preconditions.checkNotNull(nodeIdentifier);
   }
 
   @Override
-  public Operator getOperator() {
-    return operator;
+  public NodeIdentifier getNodeIdentifier() {
+    return nodeIdentifier;
   }
 
   @Override

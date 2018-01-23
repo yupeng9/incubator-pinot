@@ -1,5 +1,6 @@
 package com.linkedin.thirdeye.taskexecution.impl.dataflow;
 
+import com.linkedin.thirdeye.taskexecution.dag.NodeIdentifier;
 import com.linkedin.thirdeye.taskexecution.dataflow.reader.Reader;
 import com.linkedin.thirdeye.taskexecution.dataflow.writer.Writer;
 import org.testng.Assert;
@@ -9,7 +10,7 @@ import org.testng.annotations.Test;
 public class GenericOutputPortTest {
   @Test
   public void testCreation() {
-    GenericOutputPort<Integer> port = new GenericOutputPort<>();
+    GenericOutputPort<Integer> port = new GenericOutputPort<>(new NodeIdentifier());
     port.initialize();
 
     Writer<Integer> writer1 = port.getWriter();

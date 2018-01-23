@@ -78,7 +78,10 @@ public class DefaultDAGExecutor implements DAGExecutor {
   }
 
   private void checkAndRunNode(Node node, DAGConfig dagConfig, Set<? extends Node> upstreamDependency) {
-    if (!isFinished(node) && !isRunning(node) && parentsAreFinished(upstreamDependency)) {
+    Preconditions.checkState(!isRunning(node), "A child node {} is running before its parents have finished.",
+        node.getIdentifier());
+
+    if (!isFinished(node)  && parentsAreFinished(upstreamDependency)) {
       LOG.info("Submitting node -- {} -- for execution.", node.getIdentifier().toString());
       NodeConfig nodeConfig = dagConfig.getNodeConfig(node.getIdentifier());
       ExecutionContext executionContext = new ExecutionContext(node, nodeConfig);

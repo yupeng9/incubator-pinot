@@ -1,13 +1,8 @@
 package com.linkedin.thirdeye.taskexecution.dataflow.reader;
 
-import com.linkedin.thirdeye.taskexecution.operator.Operator;
+import com.linkedin.thirdeye.taskexecution.dataflow.Port;
 
-public interface InputPort<T> {
-  Operator getOperator();
-
-  // Used by executor
-  void initialize();
-
+public interface InputPort<T> extends Port<T> {
   // Used by executor; this is InputPort's getWriter()
   void addContext(Reader<T> reader);
 

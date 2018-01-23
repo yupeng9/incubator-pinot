@@ -25,11 +25,32 @@ public class OperatorUtils {
    */
   public static <T extends AbstractOperator> T initiateOperatorInstance(NodeIdentifier nodeIdentifier,
       Class<T> operatorClass) {
-    return initiateOperatorInstance(nodeIdentifier, new MapConfiguration(Collections.emptyMap()), operatorClass);
+    Preconditions.checkNotNull(nodeIdentifier);
+
+    try {
+      Constructor<T> constructor = operatorClass.getConstructor(NodeIdentifier.class);
+      return constructor.newInstance(nodeIdentifier);
+    } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+      LOG.debug("Failed to initiate operator '{}' with {}({}.class); trying out {}({}.class, {}.class)",
+          operatorClass.getSimpleName(), operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName(),
+          operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName(), Configuration.class.getSimpleName());
+      try {
+        Constructor<T> constructor = operatorClass.getConstructor(NodeIdentifier.class, Configuration.class);
+        return constructor.newInstance(nodeIdentifier, new MapConfiguration(Collections.emptyMap()));
+      } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e1) {
+        String errorMessage = String
+            .format("Failed to initiate operator '%s' with %s(%s.class, %s.class) or %s(%s.class).",
+                operatorClass.getSimpleName(), operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName(),
+                Configuration.class.getSimpleName(), operatorClass.getSimpleName(),
+                NodeIdentifier.class.getSimpleName());
+        throw new RuntimeException(errorMessage);
+      }
+    }
   }
 
   /**
-   * Instantiates an operator of the specified class with a node identifier and a configuration.
+   * Instantiates an operator of the specified class with a node identifier and a configuration. The specified class
+   * must have this constructor method: Constructor(NodeIdentifier.class, Configuration.class).
    *
    * @param nodeIdentifier the node identifier to be associated with the instantiated operator.
    * @param configuration the configuration for the instantiated operator.
@@ -40,25 +61,16 @@ public class OperatorUtils {
   public static <T extends AbstractOperator> T initiateOperatorInstance(NodeIdentifier nodeIdentifier,
       Configuration configuration, Class<T> operatorClass) {
     Preconditions.checkNotNull(nodeIdentifier);
-    T operator;
     try {
       Constructor<T> constructor = operatorClass.getConstructor(NodeIdentifier.class, Configuration.class);
       // TODO: Pass configuration to the operator during construction
-      operator = constructor.newInstance(nodeIdentifier, configuration);
+      return constructor.newInstance(nodeIdentifier, configuration);
     } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
-      LOG.debug("Failed to initiate operator '{}' with {}({}.class, {}.class); trying out {}({}.class)",
-          operatorClass.getSimpleName(), operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName(),
-          Configuration.class.getSimpleName(), operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName());
-      try {
-        Constructor<T> constructor = operatorClass.getConstructor(NodeIdentifier.class);
-        operator = constructor.newInstance(nodeIdentifier);
-      } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e1) {
-        LOG.error("Failed to initiate operator '{}' with {}({}.class, {}.class) or {}({}.class).",
-            operatorClass.getSimpleName(), operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName(),
-            Configuration.class.getSimpleName(), operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName());
-        throw new IllegalArgumentException(e1);
-      }
+      String errorMessage = String
+          .format("Failed to initiate operator '%s' with %s(%s.class, %s.class).", operatorClass.getSimpleName(),
+              operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName(), Configuration.class.getSimpleName(),
+              operatorClass.getSimpleName(), NodeIdentifier.class.getSimpleName());
+      throw new RuntimeException(errorMessage);
     }
-    return operator;
   }
 }
