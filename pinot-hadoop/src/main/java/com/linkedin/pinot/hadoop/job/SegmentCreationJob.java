@@ -21,6 +21,7 @@ import com.linkedin.pinot.hadoop.job.mapper.HadoopSegmentCreationMapReduceJob;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 import org.apache.hadoop.conf.Configuration;
@@ -66,7 +67,7 @@ public class SegmentCreationJob extends Configured {
 
     _inputSegmentDir = _properties.getProperty(JobConfigConstants.PATH_TO_INPUT);
     String schemaFilePath = _properties.getProperty(PATH_TO_SCHEMA);
-    _outputDir = getOutputDir();
+    _outputDir = getOutputDirs()[0];
     _stagingDir = new File(_outputDir, TEMP).getAbsolutePath();
     _depsJarPath = _properties.getProperty(PATH_TO_DEPS_JAR, null);
 
@@ -86,12 +87,12 @@ public class SegmentCreationJob extends Configured {
     LOGGER.info("*********************************************************************");
   }
 
-  protected String getOutputDir() {
-    return _properties.getProperty(JobConfigConstants.PATH_TO_OUTPUT);
+  protected String[] getOutputDirs() {
+    return new String[] {_properties.getProperty(JobConfigConstants.PATH_TO_OUTPUT)};
   }
 
-  protected String getInputDir() {
-    return _inputSegmentDir;
+  protected String[] getInputDirs() {
+    return new String[] {_inputSegmentDir};
   }
 
   protected void setOutputPath(Configuration configuration) {
