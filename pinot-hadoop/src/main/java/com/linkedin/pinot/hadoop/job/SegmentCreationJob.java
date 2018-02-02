@@ -64,7 +64,7 @@ public class SegmentCreationJob extends Configured {
     _jobName = jobName;
     _properties = properties;
 
-    _inputSegmentDir = _properties.getProperty(JobConfigConstants.PATH_TO_INPUT);
+    _inputSegmentDir = getInputDir();
     String schemaFilePath = _properties.getProperty(PATH_TO_SCHEMA);
     _outputDir = getOutputDir();
     _stagingDir = new File(_outputDir, TEMP).getAbsolutePath();
@@ -91,7 +91,7 @@ public class SegmentCreationJob extends Configured {
   }
 
   protected String getInputDir() {
-    return _inputSegmentDir;
+    return _properties.getProperty(JobConfigConstants.PATH_TO_INPUT);
   }
 
   protected void setOutputPath(Configuration configuration) {
@@ -102,7 +102,7 @@ public class SegmentCreationJob extends Configured {
     LOGGER.info("Starting {}", getClass().getSimpleName());
 
     FileSystem fs = FileSystem.get(getConf());
-    Path inputPathPattern = new Path(_inputSegmentDir);
+    Path inputPathPattern = new Path(getInputDir());
 
     if (fs.exists(new Path(_stagingDir))) {
       LOGGER.warn("Found the temp folder, deleting it");
