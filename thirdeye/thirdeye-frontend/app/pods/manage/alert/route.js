@@ -66,7 +66,7 @@ export default Route.extend({
   resetController(controller, isExiting) {
     this._super(...arguments);
     if (isExiting) {
-      controller.set('alertData', {});
+      //controller.set('alertData', {});
     }
   },
 
@@ -83,6 +83,8 @@ export default Route.extend({
       destination,
       allConfigGroups
     } = model;
+
+    console.log('here1');
 
     const newAlertData = !alertData ? {} : alertData;
     let errorText = '';
@@ -109,6 +111,8 @@ export default Route.extend({
       Object.assign(newAlertData, { functionName, isActive: false });
       errorText = `We were not able to confirm alert creation: alert name ${functionName.toUpperCase()} not found in DB`;
     }
+
+    console.log('here2');
 
     controller.setProperties({
       id,

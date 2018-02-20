@@ -234,6 +234,12 @@ export default Ember.Controller.extend({
       this.set('resultsActive', true);
     },
 
+    // Handle transition to alert page while refreshing the duration cache.
+    navigateToAlertPage(alertId) {
+      localStorage.removeItem('duration');
+      this.transitionToRoute('manage.alert.explore', alertId);
+    },
+
     // Handles filtering of alerts in response to filter selection
     userDidSelectFilter(filterArr) {
       let task = {};

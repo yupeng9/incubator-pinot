@@ -123,9 +123,11 @@
                   {{if alert.isActive "Active" "Inactive"}}
                 </span>
                 {{#if testMode}}
-                  {{#link-to "manage.alert.explore" alert.id}}
+                  {{!-- {{#link-to "manage.alert.explore" alert.id}} --}}
+                  <a href="#" {{action "navigateToAlertPage" alert.id}}>
                     <div class="te-search-results__title-name" title={{alert.functionName}}>{{alert.functionName}}</div>
-                  {{/link-to}}
+                  </a>
+                  {{!-- {{/link-to}} --}}
                 {{else}}
                   <span title={{alert.functionName}}>{{alert.functionName}}</span>
                 {{/if}}

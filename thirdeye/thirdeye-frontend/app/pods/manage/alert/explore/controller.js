@@ -496,6 +496,7 @@ export default Controller.extend({
       alertEvalMetrics: {}
     });
     this.get('checkReplayStatus').cancelAll();
+    this.get('checkForNewAnomalies').cancelAll();
   },
 
   /**
