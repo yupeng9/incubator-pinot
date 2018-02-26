@@ -51,6 +51,14 @@ export default Component.extend({
   },
 
   /**
+   * Pre-select all dimensions option if none else available
+   */
+  init() {
+    this._super(...arguments);
+    console.log(this.attrs);
+  },
+
+  /**
    * All selected dimensions to be loaded into graph
    * @returns {Array}
    */

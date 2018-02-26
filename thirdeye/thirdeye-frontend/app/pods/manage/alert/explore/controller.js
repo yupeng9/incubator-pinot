@@ -70,6 +70,7 @@ export default Controller.extend({
       replayErrorMailtoStr: '',
       selectedTimeRange: '',
       selectedFilters: JSON.stringify({}),
+      timePickerIncrement: 5,
       openReportModal: false,
       isAlertReady: false,
       isGraphReady: false,
@@ -80,6 +81,8 @@ export default Controller.extend({
       sortColumnStartUp: false,
       sortColumnScoreUp: false,
       sortColumnChangeUp: false,
+      isFetchingDimensions: false,
+      isDimensionFetchDone: false,
       sortColumnResolutionUp: false,
       checkReplayInterval: 2000, // 2 seconds
       selectedDimension: 'All Dimensions',
@@ -88,6 +91,8 @@ export default Controller.extend({
       currentPage: 1,
       pageSize: 10
     });
+
+    console.log('exp2 :', this.get('alertDimension'));
 
     // Start checking for replay to end if a jobId is present
     if (this.get('isReplayPending')) {
@@ -182,23 +187,6 @@ export default Controller.extend({
       return anomalies.slice((currentPage - 1) * pageSize, currentPage * pageSize);
     }
   ),
-
-  /**
-   * Indicates the allowed date range picker increment based on granularity
-   * @type {Number}
-   */
-  timePickerIncrement: computed('alertData.windowUnit', function() {
-    const granularity = this.get('alertData.windowUnit').toLowerCase();
-
-    switch(granularity) {
-      case 'days':
-        return 1440;
-      case 'hours':
-        return 60;
-      default:
-        return 5;
-    }
-  }),
 
   /**
    * date-time-picker: indicates the date format to be used based on granularity
@@ -603,7 +591,15 @@ export default Controller.extend({
       const { alertId, missingAnomalyProps } = this.getProperties('alertId', 'missingAnomalyProps');
       this.reportAnomaly(alertId, missingAnomalyProps)
         .then((result) => {
-          this.set('isReportSuccess', true);
+          const rangeFormat = 'YYYY-MM-DD HH:mm';
+          const startStr = moment(missingAnomalyProps.startTime).format(rangeFormat);
+          const endStr = moment(missingAnomalyProps.endTime).format(rangeFormat);
+          const anomalyDateStr = `${startStr} - ${endStr}`;
+          this.setProperties({
+            isReportSuccess: true,
+            reportedRange: anomalyDateStr
+          });
+          this.send('refreshAnomalyTable');
         })
         // If failure, leave modal open and report
         .catch((err) => {
