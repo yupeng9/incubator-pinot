@@ -66,11 +66,16 @@ public class PinotSegmentToCsvConverterHadoop {
           if (value instanceof Object[]) {
             record.add(StringUtils.join((Object[]) value, _listDelimiter));
           } else {
-            String newValue = value.toString();
-            if ("daysSinceEpoch".equals(field)) {
-              newValue = Long.toString(Long.parseLong(newValue) * 86400000);
-            }
-            record.add(newValue);
+//            String newValue = value.toString();
+//            if ("daysSinceEpoch".equals(field)) {
+//              newValue = Long.toString(Long.parseLong(newValue) * 86400000);
+//            }
+            record.add(value.toString());
+          }
+          if (field.equals("messageTimeDays")) {
+            long daysSinceEpoch = Long.parseLong(value.toString());
+            long timestampInEpoch = daysSinceEpoch * 24 * 3600_000;
+            record.add(String.valueOf(timestampInEpoch));
           }
         }
 
