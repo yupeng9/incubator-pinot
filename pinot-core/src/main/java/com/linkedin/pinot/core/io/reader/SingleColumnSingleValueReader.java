@@ -82,6 +82,14 @@ public interface SingleColumnSingleValueReader<T extends ReaderContext> extends 
    * @return
    */
   byte[] getBytes(int row);
+  
+  /**
+  *
+  * @param row Row for which to get the byte[].
+  * @param context Reader context.
+  * @return byte[] at the given row
+  */
+ byte[] getBytes(int row, T context);
 
   void readValues(int[] rows, int rowStartPos, int rowSize, int[] values, int valuesStartPos);
 }

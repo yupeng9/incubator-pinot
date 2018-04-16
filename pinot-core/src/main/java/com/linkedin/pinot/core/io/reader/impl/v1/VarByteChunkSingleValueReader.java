@@ -73,13 +73,39 @@ public class VarByteChunkSingleValueReader extends BaseChunkSingleValueReader {
     }
 
     int length = nextRowOffset - rowOffset;
-    chunkBuffer.position(rowOffset);
-
+//    chunkBuffer.position(rowOffset);
     byte[] bytes = _reusableBytes.get();
-    chunkBuffer.get(bytes, 0, length);
+    chunkBuffer.get(bytes, rowOffset, length);
     return new String(bytes, 0, length, UTF_8);
   }
 
+ 
+  @Override
+  public byte[] getBytes(int row, ChunkReaderContext context) {
+    int chunkRowId = row % _numDocsPerChunk;
+    ByteBuffer chunkBuffer = getChunkForRow(row, context);
+
+    int rowOffset = chunkBuffer.getInt(chunkRowId * INT_SIZE);
+    int nextRowOffset;
+
+    if (chunkRowId == _numDocsPerChunk - 1) {
+      // Last row in this trunk.
+      nextRowOffset = chunkBuffer.limit();
+    } else {
+      nextRowOffset = chunkBuffer.getInt((chunkRowId + 1) * INT_SIZE);
+      // For incomplete chunks, the next string's offset will be 0 as row offset for absent rows are 0.
+      if (nextRowOffset == 0) {
+        nextRowOffset = chunkBuffer.limit();
+      }
+    }
+
+    int length = nextRowOffset - rowOffset;
+//    chunkBuffer.position(rowOffset);
+
+    byte[] bytes = new byte[length];
+    chunkBuffer.get(bytes, rowOffset, length);
+    return bytes;
+  }
   @Override
   public ChunkReaderContext createContext() {
     return new ChunkReaderContext(_maxChunkSize);

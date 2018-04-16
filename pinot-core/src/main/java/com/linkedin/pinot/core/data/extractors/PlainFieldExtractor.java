@@ -52,6 +52,7 @@ public class PlainFieldExtractor implements FieldExtractor {
     SINGLE_VALUE_TYPE_MAP.put(Float.class, PinotDataType.FLOAT);
     SINGLE_VALUE_TYPE_MAP.put(Double.class, PinotDataType.DOUBLE);
     SINGLE_VALUE_TYPE_MAP.put(String.class, PinotDataType.STRING);
+    SINGLE_VALUE_TYPE_MAP.put(byte[].class, PinotDataType.BYTE_ARRAY);
 
     MULTI_VALUE_TYPE_MAP.put(Byte.class, PinotDataType.BYTE_ARRAY);
     MULTI_VALUE_TYPE_MAP.put(Character.class, PinotDataType.CHARACTER_ARRAY);
