@@ -19,9 +19,7 @@ import com.google.common.base.Preconditions;
 import com.linkedin.pinot.common.config.IndexingConfig;
 import com.linkedin.pinot.common.config.TableConfig;
 import com.linkedin.pinot.common.config.TableNameBuilder;
-import com.linkedin.pinot.common.data.FieldSpec;
 import com.linkedin.pinot.common.data.Schema;
-import com.linkedin.pinot.common.data.TimeFieldSpec;
 import com.linkedin.pinot.common.metadata.ZKMetadataProvider;
 import com.linkedin.pinot.controller.helix.ControllerRequestURLBuilder;
 import java.io.BufferedReader;
@@ -34,7 +32,6 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import org.apache.helix.PropertyPathConfig;
 import org.apache.helix.PropertyType;
@@ -226,17 +223,14 @@ public class AutoAddInvertedIndex {
       }
 
       // Skip tables without a proper time column
-      TimeFieldSpec timeFieldSpec = tableSchema.getTimeFieldSpec();
-      if (timeFieldSpec == null || timeFieldSpec.getDataType() == FieldSpec.DataType.STRING) {
-        LOGGER.info("Table: {}, skip adding inverted index because it does not have a numeric time column",
-            tableNameWithType);
+      List<String> dateTimeNames = tableSchema.getDateTimeNames();
+      if (dateTimeNames.size() == 0) {
+        // TODO: skipping check for numeric time column. is it required?
+        LOGGER.info("Table: {}, skip adding inverted index because it does not have any date time columns");
         continue;
       }
-      String timeColumnName = timeFieldSpec.getName();
-      TimeUnit timeUnit = timeFieldSpec.getOutgoingGranularitySpec().getTimeType();
-      if (timeUnit != TimeUnit.DAYS) {
-        LOGGER.warn("Table: {}, time column {] has non-DAYS time unit: {}", timeColumnName, timeUnit);
-      }
+      // TODO: skipping warn for non-DAYS time unit. is it required?
+      String timeColumnName = tableConfig.getValidationConfig().getTimeColumnName();
 
       // Only add inverted index to table larger than a threshold
       JSONObject queryResponse = sendQuery("SELECT COUNT(*) FROM " + tableNameWithType);

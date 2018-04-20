@@ -186,7 +186,7 @@ public class SchemaUtils {
     Schema schema = new Schema.SchemaBuilder().setSchemaName("testSchema")
         .addSingleValueDimension("dimension", FieldSpec.DataType.DOUBLE)
         .addMetric("metric", FieldSpec.DataType.INT)
-        .addTime("time", TimeUnit.DAYS, FieldSpec.DataType.INT)
+        .addDateTime("dateTime", FieldSpec.DataType.INT, "1:DAYS:EPOCH", "1:DAYS")
         .build();
     System.out.println(postSchema("localhost", 8100, schema));
     Schema fetchedSchema = getSchema("localhost", 8100, "testSchema");

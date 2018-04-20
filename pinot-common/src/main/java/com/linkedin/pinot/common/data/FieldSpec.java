@@ -288,6 +288,7 @@ public abstract class FieldSpec {
   public enum FieldType {
     DIMENSION,
     METRIC,
+    @Deprecated
     TIME,
     DATE_TIME
   }

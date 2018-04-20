@@ -15,7 +15,6 @@
  */
 package com.linkedin.pinot.common.data;
 
-import com.linkedin.pinot.common.data.TimeGranularitySpec.TimeFormat;
 import com.linkedin.pinot.common.utils.SchemaUtils;
 import java.io.File;
 import java.net.URL;
@@ -77,8 +76,8 @@ public class SchemaTest {
         .addMetric("derivedMetric", FieldSpec.DataType.STRING, 10, MetricFieldSpec.DerivedMetricType.HLL)
         .addMetric("derivedMetricWithDefault", FieldSpec.DataType.STRING, 10, MetricFieldSpec.DerivedMetricType.HLL,
             defaultString)
-        .addTime("time", TimeUnit.DAYS, FieldSpec.DataType.LONG)
-        .addDateTime("dateTime", FieldSpec.DataType.LONG, "1:HOURS:EPOCH", "1:HOURS")
+        .addDateTime("dateTimeMillis", FieldSpec.DataType.LONG, "1:MILLISECONDS:EPOCH", "1:HOURS")
+        .addDateTime("dateTimeHours", FieldSpec.DataType.LONG, "1:HOURS:EPOCH", "1:HOURS")
         .build();
 
     DimensionFieldSpec dimensionFieldSpec = schema.getDimensionSpec("svDimension");
@@ -153,18 +152,20 @@ public class SchemaTest {
     Assert.assertEquals(metricFieldSpec.getFieldSize(), 10);
     Assert.assertNotNull(metricFieldSpec.getDerivedMetricType());
 
-    TimeFieldSpec timeFieldSpec = schema.getTimeFieldSpec();
-    Assert.assertNotNull(timeFieldSpec);
-    Assert.assertEquals(timeFieldSpec.getFieldType(), FieldSpec.FieldType.TIME);
-    Assert.assertEquals(timeFieldSpec.getName(), "time");
-    Assert.assertEquals(timeFieldSpec.getDataType(), FieldSpec.DataType.LONG);
-    Assert.assertEquals(timeFieldSpec.isSingleValueField(), true);
-    Assert.assertEquals(timeFieldSpec.getDefaultNullValue(), Long.MIN_VALUE);
-
-    DateTimeFieldSpec dateTimeFieldSpec = schema.getDateTimeSpec("dateTime");
+    DateTimeFieldSpec dateTimeFieldSpec = schema.getDateTimeSpec("dateTimeMillis");
     Assert.assertNotNull(dateTimeFieldSpec);
     Assert.assertEquals(dateTimeFieldSpec.getFieldType(), FieldSpec.FieldType.DATE_TIME);
-    Assert.assertEquals(dateTimeFieldSpec.getName(), "dateTime");
+    Assert.assertEquals(dateTimeFieldSpec.getName(), "dateTimeMillis");
+    Assert.assertEquals(dateTimeFieldSpec.getDataType(), FieldSpec.DataType.LONG);
+    Assert.assertEquals(dateTimeFieldSpec.isSingleValueField(), true);
+    Assert.assertEquals(dateTimeFieldSpec.getDefaultNullValue(), Long.MIN_VALUE);
+    Assert.assertEquals(dateTimeFieldSpec.getFormat(), "1:MILLISECONDS:EPOCH");
+    Assert.assertEquals(dateTimeFieldSpec.getGranularity(), "1:HOURS");
+
+    dateTimeFieldSpec = schema.getDateTimeSpec("dateTimeHours");
+    Assert.assertNotNull(dateTimeFieldSpec);
+    Assert.assertEquals(dateTimeFieldSpec.getFieldType(), FieldSpec.FieldType.DATE_TIME);
+    Assert.assertEquals(dateTimeFieldSpec.getName(), "dateTimeHours");
     Assert.assertEquals(dateTimeFieldSpec.getDataType(), FieldSpec.DataType.LONG);
     Assert.assertEquals(dateTimeFieldSpec.isSingleValueField(), true);
     Assert.assertEquals(dateTimeFieldSpec.getDefaultNullValue(), Long.MIN_VALUE);
@@ -172,73 +173,24 @@ public class SchemaTest {
     Assert.assertEquals(dateTimeFieldSpec.getGranularity(), "1:HOURS");
   }
 
-  @Test
+  /*@Test
   public void testSchemaBuilderAddTime() {
-    String incomingName = "incoming";
-    FieldSpec.DataType incomingDataType = FieldSpec.DataType.LONG;
-    TimeUnit incomingTimeUnit = TimeUnit.HOURS;
-    int incomingTimeUnitSize = 1;
-    TimeGranularitySpec incomingTimeGranularitySpec =
-        new TimeGranularitySpec(incomingDataType, incomingTimeUnitSize, incomingTimeUnit, incomingName);
-    String outgoingName = "outgoing";
-    FieldSpec.DataType outgoingDataType = FieldSpec.DataType.INT;
-    TimeUnit outgoingTimeUnit = TimeUnit.DAYS;
-    int outgoingTimeUnitSize = 1;
-    TimeGranularitySpec outgoingTimeGranularitySpec =
-        new TimeGranularitySpec(outgoingDataType, outgoingTimeUnitSize, outgoingTimeUnit, outgoingName);
-    int defaultNullValue = 17050;
+
 
     Schema schema1 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnit, incomingDataType)
+        .addDateTime()
         .build();
     Schema schema2 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnit, incomingDataType, defaultNullValue)
+        .addDateTime()
         .build();
     Schema schema3 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnit, incomingDataType, outgoingName, outgoingTimeUnit, outgoingDataType)
+        .addDateTime()
         .build();
-    Schema schema4 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnit, incomingDataType, outgoingName, outgoingTimeUnit, outgoingDataType,
-            defaultNullValue)
-        .build();
-    Schema schema5 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnitSize, incomingTimeUnit, incomingDataType)
-        .build();
-    Schema schema6 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnitSize, incomingTimeUnit, incomingDataType, defaultNullValue)
-        .build();
-    Schema schema7 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnitSize, incomingTimeUnit, incomingDataType, outgoingName,
-            outgoingTimeUnitSize, outgoingTimeUnit, outgoingDataType)
-        .build();
-    Schema schema8 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingName, incomingTimeUnitSize, incomingTimeUnit, incomingDataType, outgoingName,
-            outgoingTimeUnitSize, outgoingTimeUnit, outgoingDataType, defaultNullValue)
-        .build();
-    Schema schema9 =
-        new Schema.SchemaBuilder().setSchemaName("testSchema").addTime(incomingTimeGranularitySpec).build();
-    Schema schema10 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingTimeGranularitySpec, defaultNullValue)
-        .build();
-    Schema schema11 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingTimeGranularitySpec, outgoingTimeGranularitySpec)
-        .build();
-    Schema schema12 = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingTimeGranularitySpec, outgoingTimeGranularitySpec, defaultNullValue)
-        .build();
+
 
     Assert.assertNotNull(schema1.getTimeFieldSpec());
     Assert.assertNotNull(schema2.getTimeFieldSpec());
     Assert.assertNotNull(schema3.getTimeFieldSpec());
-    Assert.assertNotNull(schema4.getTimeFieldSpec());
-    Assert.assertNotNull(schema5.getTimeFieldSpec());
-    Assert.assertNotNull(schema6.getTimeFieldSpec());
-    Assert.assertNotNull(schema7.getTimeFieldSpec());
-    Assert.assertNotNull(schema8.getTimeFieldSpec());
-    Assert.assertNotNull(schema9.getTimeFieldSpec());
-    Assert.assertNotNull(schema10.getTimeFieldSpec());
-    Assert.assertNotNull(schema11.getTimeFieldSpec());
-    Assert.assertNotNull(schema12.getTimeFieldSpec());
 
     Assert.assertEquals(schema1, schema5);
     Assert.assertEquals(schema1, schema9);
@@ -270,7 +222,7 @@ public class SchemaTest {
     Assert.assertEquals(schema7, schema8);
     Assert.assertEquals(schema9, schema10);
     Assert.assertEquals(schema11, schema12);
-  }
+  }*/
 
   @Test
   public void testSerializeDeserialize() throws Exception {
@@ -295,14 +247,11 @@ public class SchemaTest {
 
   @Test
   public void testSimpleDateFormat() throws Exception {
-    TimeGranularitySpec incomingTimeGranularitySpec =
-        new TimeGranularitySpec(FieldSpec.DataType.STRING, 1, TimeUnit.DAYS,
-            TimeFormat.SIMPLE_DATE_FORMAT + ":yyyyMMdd", "Date");
-    TimeGranularitySpec outgoingTimeGranularitySpec =
-        new TimeGranularitySpec(FieldSpec.DataType.STRING, 1, TimeUnit.DAYS,
-            TimeFormat.SIMPLE_DATE_FORMAT + ":yyyyMMdd", "Date");
+    DateTimeFormatSpec dateTimeFormatSpec =
+        new DateTimeFormatSpec(1, "DAYS", DateTimeFieldSpec.TimeFormat.SIMPLE_DATE_FORMAT.toString(), "yyyyMMdd");
+    DateTimeGranularitySpec dateTimeGranularitySpec = new DateTimeGranularitySpec(1, TimeUnit.DAYS);
     Schema schema = new Schema.SchemaBuilder().setSchemaName("testSchema")
-        .addTime(incomingTimeGranularitySpec, outgoingTimeGranularitySpec)
+        .addDateTime("Date", FieldSpec.DataType.STRING, dateTimeFormatSpec, dateTimeGranularitySpec)
         .build();
     String jsonSchema = schema.getJSONSchema();
     Schema schemaFromJson = Schema.fromString(jsonSchema);
