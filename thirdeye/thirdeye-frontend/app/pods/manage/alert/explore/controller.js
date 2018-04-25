@@ -191,7 +191,8 @@ export default Controller.extend({
    * @type {String}
    */
   uiDateFormat: computed('alertData.windowUnit', function() {
-    const granularity = this.get('alertData.windowUnit').toLowerCase();
+    const rawGranularity = this.get('alertData.windowUnit');
+    const granularity = rawGranularity ? rawGranularity.toLowerCase() : '';
 
     switch(granularity) {
       case 'days':
