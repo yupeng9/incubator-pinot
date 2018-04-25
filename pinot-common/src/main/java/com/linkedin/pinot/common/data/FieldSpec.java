@@ -288,6 +288,7 @@ public abstract class FieldSpec {
   public enum FieldType {
     DIMENSION,
     METRIC,
+    @Deprecated // https://github.com/linkedin/pinot/issues/2756
     TIME,
     DATE_TIME
   }

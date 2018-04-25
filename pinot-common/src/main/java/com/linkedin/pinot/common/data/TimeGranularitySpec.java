@@ -43,6 +43,7 @@ import org.joda.time.format.DateTimeFormat;
  */
 @SuppressWarnings("unused")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Deprecated //https://github.com/linkedin/pinot/issues/2756
 public class TimeGranularitySpec {
   private static final int DEFAULT_TIME_UNIT_SIZE = 1;
   private static final String DEFAULT_TIME_FORMAT = TimeFormat.EPOCH.toString();

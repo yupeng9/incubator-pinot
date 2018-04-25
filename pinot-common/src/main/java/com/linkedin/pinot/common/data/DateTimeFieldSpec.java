@@ -28,6 +28,8 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 public final class DateTimeFieldSpec extends FieldSpec {
   private String _format;
   private String _granularity;
+  private DateTimeFormatSpec _formatSpec;
+  private DateTimeGranularitySpec _granularitySpec;
 
   public enum TimeFormat {
     EPOCH,
@@ -76,7 +78,21 @@ public final class DateTimeFieldSpec extends FieldSpec {
     Preconditions.checkArgument(DateTimeGranularitySpec.isValidGranularity(granularity));
 
     _format = format;
+    _formatSpec = new DateTimeFormatSpec(format);
     _granularity = granularity;
+    _granularitySpec = new DateTimeGranularitySpec(granularity);
+  }
+
+  public DateTimeFieldSpec(String name, DataType dataType, DateTimeFormatSpec dateTimeFormatSpec,
+      DateTimeGranularitySpec dateTimeGranularitySpec) {
+    super(name, dataType, true);
+    Preconditions.checkNotNull(name);
+    Preconditions.checkNotNull(dataType);
+
+    _format = dateTimeFormatSpec.getFormat();
+    _formatSpec = dateTimeFormatSpec;
+    _granularity = dateTimeGranularitySpec.getGranularity();
+    _granularitySpec = dateTimeGranularitySpec;
   }
 
   @JsonIgnore
@@ -110,6 +126,14 @@ public final class DateTimeFieldSpec extends FieldSpec {
   // Required by JSON de-serializer. DO NOT REMOVE.
   public void setGranularity(@Nonnull String granularity) {
     _granularity = granularity;
+  }
+
+  public DateTimeGranularitySpec getGranularitySpec() {
+    return _granularitySpec;
+  }
+
+  public DateTimeFormatSpec getFormatSpec() {
+    return _formatSpec;
   }
 
   @Nonnull

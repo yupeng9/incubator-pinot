@@ -26,6 +26,7 @@ import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @SuppressWarnings("unused")
 @JsonIgnoreProperties(ignoreUnknown = true)
+@Deprecated // https://github.com/linkedin/pinot/issues/2756
 public final class TimeFieldSpec extends FieldSpec {
   private TimeGranularitySpec _incomingGranularitySpec;
   private TimeGranularitySpec _outgoingGranularitySpec;

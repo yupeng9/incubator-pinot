@@ -134,6 +134,12 @@ public final class Schema {
 
   @Nonnull
   public List<DateTimeFieldSpec> getDateTimeFieldSpecs() {
+    if (_timeFieldSpec != null) {
+      List<DateTimeFieldSpec> dateTimeFieldSpecs = new ArrayList<>();
+      dateTimeFieldSpecs.addAll(_dateTimeFieldSpecs);
+      dateTimeFieldSpecs.add(getDateTimeFieldSpecFromTimeFieldSpec(_timeFieldSpec));
+      return dateTimeFieldSpecs;
+    }
     return _dateTimeFieldSpecs;
   }
 
@@ -151,6 +157,7 @@ public final class Schema {
     }
   }
 
+  @Deprecated //https://github.com/linkedin/pinot/issues/2756
   public TimeFieldSpec getTimeFieldSpec() {
     return _timeFieldSpec;
   }
@@ -160,13 +167,36 @@ public final class Schema {
    * Adding @Deprecated to prevent usage
    * @param timeFieldSpec
    */
-  @Deprecated
+  @Deprecated //https://github.com/linkedin/pinot/issues/2756
   public void setTimeFieldSpec(TimeFieldSpec timeFieldSpec) {
     if (timeFieldSpec != null) {
       addField(timeFieldSpec);
     }
   }
 
+  @JsonIgnore
+  private DateTimeFieldSpec getDateTimeFieldSpecFromTimeFieldSpec(TimeFieldSpec timeFieldSpec) {
+    String name = timeFieldSpec.getName();
+    TimeGranularitySpec outgoingTimeSpec = timeFieldSpec.getOutgoingGranularitySpec();
+    DataType dataType = outgoingTimeSpec.getDataType();
+    int columnSize = outgoingTimeSpec.getTimeUnitSize();
+    TimeUnit columnUnit = outgoingTimeSpec.getTimeType();
+    String[] timeFormatTokens = outgoingTimeSpec.getTimeFormat().split(":");
+    String columnTimeFormat = timeFormatTokens[0];
+    DateTimeFormatSpec dateTimeFormatSpec;
+    if (timeFormatTokens.length > 1) {
+      String sdfPattern = timeFormatTokens[1];
+      dateTimeFormatSpec = new DateTimeFormatSpec(columnSize, String.valueOf(columnUnit), columnTimeFormat, sdfPattern);
+    } else {
+      dateTimeFormatSpec = new DateTimeFormatSpec(columnSize, String.valueOf(columnUnit), columnTimeFormat);
+    }
+    DateTimeGranularitySpec dateTimeGranularitySpec = new DateTimeGranularitySpec(columnSize, columnUnit);
+    DateTimeFieldSpec dateTimeFieldSpec =
+        new DateTimeFieldSpec(name, dataType, dateTimeFormatSpec, dateTimeGranularitySpec);
+    return dateTimeFieldSpec;
+  }
+
+  // TODO WIP:- return timespec along with datetime in getters related to datetime
   public void addField(@Nonnull FieldSpec fieldSpec) {
     Preconditions.checkNotNull(fieldSpec);
     String columnName = fieldSpec.getName();
@@ -196,12 +226,6 @@ public final class Schema {
     }
 
     _fieldSpecMap.put(columnName, fieldSpec);
-  }
-
-  @Deprecated
-  // For third-eye backward compatible.
-  public void addField(@Nonnull String columnName, @Nonnull FieldSpec fieldSpec) {
-    addField(fieldSpec);
   }
 
   public boolean removeField(String columnName) {
@@ -288,8 +312,13 @@ public final class Schema {
   @JsonIgnore
   public DateTimeFieldSpec getDateTimeSpec(@Nonnull String dateTimeName) {
     FieldSpec fieldSpec = _fieldSpecMap.get(dateTimeName);
-    if (fieldSpec != null && fieldSpec.getFieldType() == FieldType.DATE_TIME) {
-      return (DateTimeFieldSpec) fieldSpec;
+    if (fieldSpec != null) {
+      if (fieldSpec.getFieldType() == FieldType.DATE_TIME) {
+        return (DateTimeFieldSpec) fieldSpec;
+      }
+      if (fieldSpec.getFieldType() == FieldType.TIME) {
+        return getDateTimeFieldSpecFromTimeFieldSpec((TimeFieldSpec) fieldSpec);
+      }
     }
     return null;
   }
@@ -309,20 +338,29 @@ public final class Schema {
   @JsonIgnore
   @Nonnull
   public List<String> getDateTimeNames() {
+    if (_timeFieldSpec != null) {
+      List<String> dateTimeNames = new ArrayList<>();
+      dateTimeNames.addAll(_dateTimeNames);
+      dateTimeNames.add(_timeFieldSpec.getName());
+      return dateTimeNames;
+    }
     return _dateTimeNames;
   }
 
   @JsonIgnore
+  @Deprecated //https://github.com/linkedin/pinot/issues/2756
   public String getTimeColumnName() {
     return (_timeFieldSpec != null) ? _timeFieldSpec.getName() : null;
   }
 
   @JsonIgnore
+  @Deprecated //https://github.com/linkedin/pinot/issues/2756
   public TimeUnit getIncomingTimeUnit() {
     return (_timeFieldSpec != null) ? _timeFieldSpec.getIncomingGranularitySpec().getTimeType() : null;
   }
 
   @JsonIgnore
+  @Deprecated //https://github.com/linkedin/pinot/issues/2756
   public TimeUnit getOutgoingTimeUnit() {
     return (_timeFieldSpec != null) ? _timeFieldSpec.getOutgoingGranularitySpec().getTimeType() : null;
   }
@@ -481,18 +519,21 @@ public final class Schema {
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, @Nonnull TimeUnit incomingTimeUnit,
         @Nonnull DataType incomingDataType) {
       _schema.addField(new TimeFieldSpec(incomingName, incomingDataType, incomingTimeUnit));
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, @Nonnull TimeUnit incomingTimeUnit,
         @Nonnull DataType incomingDataType, @Nonnull Object defaultNullValue) {
       _schema.addField(new TimeFieldSpec(incomingName, incomingDataType, incomingTimeUnit, defaultNullValue));
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, @Nonnull TimeUnit incomingTimeUnit,
         @Nonnull DataType incomingDataType, @Nonnull String outgoingName, @Nonnull TimeUnit outgoingTimeUnit,
         @Nonnull DataType outgoingDataType) {
@@ -502,6 +543,7 @@ public final class Schema {
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, @Nonnull TimeUnit incomingTimeUnit,
         @Nonnull DataType incomingDataType, @Nonnull String outgoingName, @Nonnull TimeUnit outgoingTimeUnit,
         @Nonnull DataType outgoingDataType, @Nonnull Object defaultNullValue) {
@@ -511,12 +553,14 @@ public final class Schema {
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, int incomingTimeUnitSize,
         @Nonnull TimeUnit incomingTimeUnit, @Nonnull DataType incomingDataType) {
       _schema.addField(new TimeFieldSpec(incomingName, incomingDataType, incomingTimeUnitSize, incomingTimeUnit));
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, int incomingTimeUnitSize,
         @Nonnull TimeUnit incomingTimeUnit, @Nonnull DataType incomingDataType, @Nonnull Object defaultNullValue) {
       _schema.addField(
@@ -524,6 +568,7 @@ public final class Schema {
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, int incomingTimeUnitSize,
         @Nonnull TimeUnit incomingTimeUnit, @Nonnull DataType incomingDataType, @Nonnull String outgoingName,
         int outgoingTimeUnitSize, @Nonnull TimeUnit outgoingTimeUnit, @Nonnull DataType outgoingDataType) {
@@ -533,6 +578,7 @@ public final class Schema {
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull String incomingName, int incomingTimeUnitSize,
         @Nonnull TimeUnit incomingTimeUnit, @Nonnull DataType incomingDataType, @Nonnull String outgoingName,
         int outgoingTimeUnitSize, @Nonnull TimeUnit outgoingTimeUnit, @Nonnull DataType outgoingDataType,
@@ -543,23 +589,27 @@ public final class Schema {
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull TimeGranularitySpec incomingTimeGranularitySpec) {
       _schema.addField(new TimeFieldSpec(incomingTimeGranularitySpec));
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull TimeGranularitySpec incomingTimeGranularitySpec,
         @Nonnull Object defaultNullValue) {
       _schema.addField(new TimeFieldSpec(incomingTimeGranularitySpec, defaultNullValue));
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull TimeGranularitySpec incomingTimeGranularitySpec,
         @Nonnull TimeGranularitySpec outgoingTimeGranularitySpec) {
       _schema.addField(new TimeFieldSpec(incomingTimeGranularitySpec, outgoingTimeGranularitySpec));
       return this;
     }
 
+    @Deprecated //https://github.com/linkedin/pinot/issues/2756
     public SchemaBuilder addTime(@Nonnull TimeGranularitySpec incomingTimeGranularitySpec,
         @Nonnull TimeGranularitySpec outgoingTimeGranularitySpec, @Nonnull Object defaultNullValue) {
       _schema.addField(new TimeFieldSpec(incomingTimeGranularitySpec, outgoingTimeGranularitySpec, defaultNullValue));
@@ -611,5 +661,24 @@ public final class Schema {
     result = EqualityUtils.hashCodeOf(result, _timeFieldSpec);
     result = EqualityUtils.hashCodeOf(result, _dateTimeFieldSpecs);
     return result;
+  }
+
+  public static void main(String[] args) throws IOException {
+    Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/schemaDateTime.json"));
+    //Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/schemaOnlyDateTime.json"));
+    //Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/timeAndDateTime.json"));
+    //Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/thirdeyeKbmi.json"));
+    System.out.println(schema.getJSONSchema());
+    System.out.println(schema.getFieldSpecFor("Date"));
+    System.out.println(schema.getFieldSpecFor("hoursSinceEpoch"));
+    System.out.println(schema.getFieldSpecFor("timestampInEpoch"));
+    System.out.println(schema.getFieldSpecFor("hoursSinceEpochInMS"));
+    System.out.println(schema.getDateTimeNames());
+    System.out.println(schema.getDateTimeFieldSpecs());
+    System.out.println(schema.getTimeFieldSpec());
+    System.out.println(schema.getDateTimeSpec("Date"));
+    System.out.println(schema.getDateTimeSpec("hoursSinceEpoch"));
+    System.out.println(schema.getDateTimeSpec("timestampInEpoch"));
+    System.out.println(schema.getDateTimeSpec("hoursSinceEpochInMS"));
   }
 }
