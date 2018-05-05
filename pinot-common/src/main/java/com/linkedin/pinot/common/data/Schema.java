@@ -134,12 +134,6 @@ public final class Schema {
 
   @Nonnull
   public List<DateTimeFieldSpec> getDateTimeFieldSpecs() {
-    if (_timeFieldSpec != null) {
-      List<DateTimeFieldSpec> dateTimeFieldSpecs = new ArrayList<>();
-      dateTimeFieldSpecs.addAll(_dateTimeFieldSpecs);
-      dateTimeFieldSpecs.add(getDateTimeFieldSpecFromTimeFieldSpec(_timeFieldSpec));
-      return dateTimeFieldSpecs;
-    }
     return _dateTimeFieldSpecs;
   }
 
@@ -150,7 +144,8 @@ public final class Schema {
    */
   @Deprecated
   public void setDateTimeFieldSpecs(@Nonnull List<DateTimeFieldSpec> dateTimeFieldSpecs) {
-    Preconditions.checkState(_dateTimeFieldSpecs.isEmpty());
+    Preconditions.checkState(_dateTimeFieldSpecs.isEmpty() || (_timeFieldSpec != null && _dateTimeFieldSpecs.size() == 1
+        && _dateTimeFieldSpecs.get(0).getName().equals(_timeFieldSpec.getName())));
 
     for (DateTimeFieldSpec dateTimeFieldSpec : dateTimeFieldSpecs) {
       addField(dateTimeFieldSpec);
@@ -196,7 +191,6 @@ public final class Schema {
     return dateTimeFieldSpec;
   }
 
-  // TODO WIP:- return timespec along with datetime in getters related to datetime
   public void addField(@Nonnull FieldSpec fieldSpec) {
     Preconditions.checkNotNull(fieldSpec);
     String columnName = fieldSpec.getName();
@@ -216,6 +210,10 @@ public final class Schema {
         break;
       case TIME:
         _timeFieldSpec = (TimeFieldSpec) fieldSpec;
+        DateTimeFieldSpec dateTimeFieldSpec = getDateTimeFieldSpecFromTimeFieldSpec(_timeFieldSpec);
+        fieldSpec = dateTimeFieldSpec;
+        _dateTimeNames.add(columnName);
+        _dateTimeFieldSpecs.add(dateTimeFieldSpec);
         break;
       case DATE_TIME:
         _dateTimeNames.add(columnName);
@@ -316,9 +314,6 @@ public final class Schema {
       if (fieldSpec.getFieldType() == FieldType.DATE_TIME) {
         return (DateTimeFieldSpec) fieldSpec;
       }
-      if (fieldSpec.getFieldType() == FieldType.TIME) {
-        return getDateTimeFieldSpecFromTimeFieldSpec((TimeFieldSpec) fieldSpec);
-      }
     }
     return null;
   }
@@ -338,12 +333,6 @@ public final class Schema {
   @JsonIgnore
   @Nonnull
   public List<String> getDateTimeNames() {
-    if (_timeFieldSpec != null) {
-      List<String> dateTimeNames = new ArrayList<>();
-      dateTimeNames.addAll(_dateTimeNames);
-      dateTimeNames.add(_timeFieldSpec.getName());
-      return dateTimeNames;
-    }
     return _dateTimeNames;
   }
 
@@ -390,6 +379,9 @@ public final class Schema {
     if (!_dateTimeFieldSpecs.isEmpty()) {
       JsonArray jsonArray = new JsonArray();
       for (DateTimeFieldSpec dateTimeFieldSpec : _dateTimeFieldSpecs) {
+        if (_timeFieldSpec != null && dateTimeFieldSpec.getName().equals(_timeFieldSpec.getName())) {
+          continue;
+        }
         jsonArray.add(dateTimeFieldSpec.toJsonObject());
       }
       jsonSchema.add("dateTimeFieldSpecs", jsonArray);
@@ -664,10 +656,10 @@ public final class Schema {
   }
 
   public static void main(String[] args) throws IOException {
-    Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/schemaDateTime.json"));
-    //Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/schemaOnlyDateTime.json"));
-    //Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/timeAndDateTime.json"));
-    //Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/thirdeyeKbmi.json"));
+//    Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/schemaDateTime.json"));
+//    Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/schemaOnlyDateTime.json"));
+//    Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/timeAndDateTime.json"));
+    Schema schema = Schema.fromFile(new File("/Users/npawar/pinotOnAzureProject/thirdeyeKbmi.json"));
     System.out.println(schema.getJSONSchema());
     System.out.println(schema.getFieldSpecFor("Date"));
     System.out.println(schema.getFieldSpecFor("hoursSinceEpoch"));
