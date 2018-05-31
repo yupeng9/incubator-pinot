@@ -136,21 +136,25 @@ public class TableQueryQuotaManager {
 
     Map<String, String> stateMap = brokerResource.getStateMap(tableName);
     int otherOnlineBrokerCount = 0;
+    int otherBrokerCount = 0;
 
     // If stateMap is null, that means this broker is the first broker for this table.
     if (stateMap != null) {
       for (Map.Entry<String, String> state : stateMap.entrySet()) {
-        if (!_helixManager.getInstanceName().equals(state.getKey())
-            && state.getValue().equals(CommonConstants.Helix.StateModel.SegmentOnlineOfflineStateModel.ONLINE)) {
-          otherOnlineBrokerCount++;
+        if (!_helixManager.getInstanceName().equals(state.getKey())) {
+          if (state.getValue().equals(CommonConstants.Helix.StateModel.SegmentOnlineOfflineStateModel.ONLINE)) {
+            otherOnlineBrokerCount++;
+          }
+          otherBrokerCount++;
         }
       }
     }
     LOGGER.info("The number of online brokers for table {} is {}", tableName, otherOnlineBrokerCount + 1);
-    //int onlineCount = otherOnlineBrokerCount + 1;
+    //int onlineBrokerCount = otherOnlineBrokerCount + 1;
 
     // FIXME We use fixed rate for the 1st version.
-    int onlineCount = 1;
+    LOGGER.info("The total number of brokers for table {} is {}", tableName, otherBrokerCount + 1);
+    int totalBrokerCount = otherBrokerCount + 1;
 
     // Get the dynamic rate
     double overallRate;
@@ -162,11 +166,12 @@ public class TableQueryQuotaManager {
       return;
     }
 
-    double perBrokerRate =  overallRate / onlineCount;
+    double perBrokerRate =  overallRate / totalBrokerCount;
     QueryQuotaConfig queryQuotaConfig = new QueryQuotaConfig(RateLimiter.create(perBrokerRate), new HitCounter(TIME_RANGE_IN_SECOND));
     _rateLimiterMap.put(tableName, queryQuotaConfig);
-    LOGGER.info("Rate limiter for table: {} has been initialized. Overall rate: {}. Per-broker rate: {}. Number of online broker instances: {}",
-        tableName, overallRate, perBrokerRate, onlineCount);
+    // FIXME Use the onlineBrokerCount in the 2nd phrase.
+    LOGGER.info("Rate limiter for table: {} has been initialized. Overall rate: {}. Per-broker rate: {}. Total number of broker instances: {}",
+        tableName, overallRate, perBrokerRate, totalBrokerCount);
   }
 
   /**
