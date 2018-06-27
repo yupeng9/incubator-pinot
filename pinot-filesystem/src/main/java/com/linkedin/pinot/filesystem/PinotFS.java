@@ -15,6 +15,7 @@
  */
 package com.linkedin.pinot.filesystem;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import org.apache.commons.configuration.Configuration;
@@ -55,10 +56,11 @@ public abstract class PinotFS {
    * Works both for moving a directory and a file.
    * @param srcUri URI of the original file
    * @param dstUri URI of the final file location
+   * @param tempLocalSegmentFile File that points to a temporary directory in case moving from srcUri to dstUri isn't allowed
    * @return true if copy is successful
-   * @throws IOException on IO Failure
+   * @throws Exception on Failure
    */
-  public abstract boolean copy(URI srcUri, URI dstUri) throws IOException;
+  public abstract boolean copy(URI srcUri, URI dstUri, File tempLocalSegmentFile) throws Exception;
 
   /**
    * Checks whether the file or directory at the provided location exists.
@@ -92,7 +94,7 @@ public abstract class PinotFS {
    * @param dstUri location of destination on local filesystem
    * @throws IOException IO Failures
    */
-  public abstract void copyToLocalFile(URI srcUri, URI dstUri) throws IOException;
+  public abstract void copyToLocalFile(URI srcUri, URI dstUri) throws Exception;
 
   /**
    * The src file is on the local disk. Add it to filesystem at the given dst name and the source is kept intact

@@ -39,6 +39,11 @@ public class ServerConf {
 
   private static final String PINOT_QUERY_SCHEDULER_PREFIX = "pinot.query.scheduler";
 
+  private static final String PINOT_STORAGE_PREFIX = "pinot.storage.prefix";
+  private static final String PINOT_STORAGE_DIR = "pinot.storage.dir";
+
+  private static final String PINOT_SERVER_STORAGE = "pinot.storage";
+
   private Configuration _serverConf;
 
   public ServerConf(Configuration serverConfig) {
@@ -47,6 +52,10 @@ public class ServerConf {
 
   public void init(Configuration serverConfig) {
     _serverConf = serverConfig;
+  }
+
+  public Configuration getStorageConf() {
+    return _serverConf.subset(PINOT_SERVER_STORAGE);
   }
 
   public Configuration getInstanceDataManagerConfig() {

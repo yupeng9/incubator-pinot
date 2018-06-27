@@ -53,6 +53,7 @@ public abstract class SegmentZKMetadata implements ZKMetadata {
   private SegmentPartitionMetadata _partitionMetadata;
   private long _segmentUploadStartTime = -1;
   private Map<String, String> _customMap;
+  private String _segmentVersion;
 
   public SegmentZKMetadata() {
   }
@@ -84,6 +85,7 @@ public abstract class SegmentZKMetadata implements ZKMetadata {
     }
     _segmentUploadStartTime = znRecord.getLongField(CommonConstants.Segment.SEGMENT_UPLOAD_START_TIME, -1);
     _customMap = znRecord.getMapField(CommonConstants.Segment.CUSTOM_MAP);
+    _segmentVersion = znRecord.getStringField(CommonConstants.Segment.SEGMENT_VERSION, null);
   }
 
   public String getSegmentName() {
@@ -204,6 +206,14 @@ public abstract class SegmentZKMetadata implements ZKMetadata {
 
   public void setCustomMap(Map<String, String> customMap) {
     _customMap = customMap;
+  }
+
+  public void setSegmentVersion(String segmentVersion) {
+    _segmentVersion = segmentVersion;
+  }
+
+  public String getSegmentVersion() {
+    return _segmentVersion;
   }
 
   @Override

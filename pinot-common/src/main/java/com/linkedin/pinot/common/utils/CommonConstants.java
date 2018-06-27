@@ -297,6 +297,8 @@ public class CommonConstants {
   }
 
   public static class Segment {
+    public static final String SEGMENT_VERSION = "segment.version";
+
     public static class Realtime {
       public enum Status {
         IN_PROGRESS,

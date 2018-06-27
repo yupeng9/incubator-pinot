@@ -68,7 +68,7 @@ public class LocalPinotFS extends PinotFS {
   }
 
   @Override
-  public boolean copy(URI srcUri, URI dstUri) throws IOException {
+  public boolean copy(URI srcUri, URI dstUri, File tempLocalSegmentFile) throws Exception {
     File srcFile = new File(srcUri);
     File dstFile = new File(dstUri);
     if (dstFile.exists()) {
@@ -107,12 +107,18 @@ public class LocalPinotFS extends PinotFS {
   }
 
   @Override
-  public void copyToLocalFile(URI srcUri, URI dstUri) throws IOException {
-    copy(srcUri, dstUri);
+  public void copyToLocalFile(URI srcUri, URI dstUri) throws Exception {
+    // For local implementation, we don't need a temporary location
+    copy(srcUri, dstUri, null);
   }
 
   @Override
   public void copyFromLocalFile(URI srcUri, URI dstUri) throws IOException {
-    copy(srcUri, dstUri);
+    try {
+      // For local implementation, we don't need a temporary location
+      copy(srcUri, dstUri, null);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }

@@ -16,6 +16,7 @@
 package com.linkedin.pinot.filesystem;
 
 import com.google.common.base.Strings;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -72,10 +73,17 @@ public class HadoopPinotFS extends PinotFS {
 
   /**
    * Note that this method copies within a cluster. If you want to copy outside the cluster, you will
-   * need to create a new configuration and filesystem. Keeps files if copy/move is partial.
+   * need to create a new configuration and filesystem. Keeps files if copy/move is partial. If copy fails due to
+   * a problem moving between clusters, we will automatically try to copy the file to local and copy to the remote dest.
    */
   @Override
-  public boolean copy(URI srcUri, URI dstUri) throws IOException {
+  public boolean copy(URI srcUri, URI dstUri, File tempLocalSegmentFile) throws Exception {
+    if (!canMoveBetweenLocations(srcUri, dstUri)) {
+      copyToLocalFile(srcUri, tempLocalSegmentFile.toURI());
+      copyFromLocalFile(tempLocalSegmentFile.toURI(), dstUri);
+      // Would have thrown exception if didn't succeed
+      return true;
+    }
     Path source = new Path(srcUri);
     Path target = new Path(dstUri);
     RemoteIterator<LocatedFileStatus> sourceFiles = hadoopFS.listFiles(source, true);
@@ -119,7 +127,7 @@ public class HadoopPinotFS extends PinotFS {
   }
 
   @Override
-  public void copyToLocalFile(URI srcUri, URI dstUri) throws IOException {
+  public void copyToLocalFile(URI srcUri, URI dstUri) throws Exception {
     hadoopFS.copyToLocalFile(new Path(srcUri), new Path(dstUri));
   }
 
