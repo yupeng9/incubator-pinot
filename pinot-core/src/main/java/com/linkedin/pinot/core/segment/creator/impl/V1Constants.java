@@ -98,6 +98,7 @@ public class V1Constants {
       public static final String SEGMENT_TOTAL_CONVERSIONS = "segment.total.conversions";
       public static final String SEGMENT_TOTAL_NULL_COLS = "segment.total.null.cols";
       public static final String SEGMENT_HLL_LOG2M = "segment.hll.log2m";
+      public static final String SEGMENT_MERGE_COVER = "segment.merge.cover";
 
       // not using currently
       public static final String SEGMENT_INDEX_TYPE = "segment.index.type";

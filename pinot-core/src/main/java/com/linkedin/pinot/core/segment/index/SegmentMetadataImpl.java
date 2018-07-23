@@ -70,6 +70,7 @@ public class SegmentMetadataImpl implements SegmentMetadata {
   private String _segmentName;
   private final Set<String> _allColumns;
   private final Schema _schema;
+  private final List<String> _coveredSegments;
   private long _crc = Long.MIN_VALUE;
   private long _creationTime = Long.MIN_VALUE;
   private String _timeColumn;
@@ -90,7 +91,7 @@ public class SegmentMetadataImpl implements SegmentMetadata {
   private long _segmentStartTime;
   private long _segmentEndTime;
 
- 
+
   /**
    * For segments on disk.
    * <p>Index directory passed in should be top level segment directory.
@@ -102,6 +103,7 @@ public class SegmentMetadataImpl implements SegmentMetadata {
     _columnMetadataMap = new HashMap<>();
     _allColumns = new HashSet<>();
     _schema = new Schema();
+    _coveredSegments = new ArrayList<>();
 
     init(segmentMetadataPropertiesConfiguration);
     File creationMetaFile = SegmentDirectoryPaths.findCreationMetaFile(indexDir);
@@ -147,6 +149,7 @@ public class SegmentMetadataImpl implements SegmentMetadata {
     setTimeInfo(segmentMetadataPropertiesConfiguration);
     _columnMetadataMap = null;
     _tableName = segmentMetadata.getTableName();
+    _coveredSegments = null;
     _segmentName = segmentMetadata.getSegmentName();
     _allColumns = schema.getColumnNames();
     _schema = schema;
@@ -292,6 +295,12 @@ public class SegmentMetadataImpl implements SegmentMetadata {
       }
     }
 
+    Iterator<String> iterator = segmentMetadataPropertiesConfiguration.getList(Segment.SEGMENT_MERGE_COVER).iterator();
+    while(iterator.hasNext()) {
+      final String segmentName = iterator.next();
+      _coveredSegments.add(segmentName);
+    }
+
     // Build star-tree metadata.
     _hasStarTree = segmentMetadataPropertiesConfiguration.getBoolean(MetadataKeys.StarTree.STAR_TREE_ENABLED, false);
     if (_hasStarTree) {
@@ -357,6 +366,10 @@ public class SegmentMetadataImpl implements SegmentMetadata {
 
   public Map<String, ColumnMetadata> getColumnMetadataMap() {
     return _columnMetadataMap;
+  }
+
+  public List<String> getCoveredSegments() {
+    return _coveredSegments;
   }
 
   @Override

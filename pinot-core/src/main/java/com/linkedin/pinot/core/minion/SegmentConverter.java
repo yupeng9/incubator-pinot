@@ -17,7 +17,10 @@ package com.linkedin.pinot.core.minion;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.pinot.common.config.IndexingConfig;
+import com.linkedin.pinot.common.data.Schema;
 import com.linkedin.pinot.common.data.StarTreeIndexSpec;
+import com.linkedin.pinot.common.exception.InvalidConfigException;
+import com.linkedin.pinot.common.segment.SegmentMetadata;
 import com.linkedin.pinot.core.data.readers.PinotSegmentRecordReader;
 import com.linkedin.pinot.core.data.readers.RecordReader;
 import com.linkedin.pinot.core.indexsegment.generator.SegmentGeneratorConfig;
@@ -28,6 +31,7 @@ import com.linkedin.pinot.core.minion.segment.RecordPartitioner;
 import com.linkedin.pinot.core.minion.segment.RecordTransformer;
 import com.linkedin.pinot.core.minion.segment.ReducerRecordReader;
 import com.linkedin.pinot.core.segment.creator.impl.SegmentIndexCreationDriverImpl;
+import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,11 +70,13 @@ public class SegmentConverter {
   private RecordAggregator _recordAggregator;
   private List<String> _groupByColumns;
   private IndexingConfig _indexingConfig;
+  private Boolean _setSegmentCoveredMetadata;
 
   public SegmentConverter(@Nonnull List<File> inputIndexDirs, @Nonnull File workingDir, @Nonnull String tableName,
       @Nonnull String segmentName, int totalNumPartition, @Nonnull RecordTransformer recordTransformer,
       @Nullable RecordPartitioner recordPartitioner, @Nullable RecordAggregator recordAggregator,
-      @Nullable List<String> groupByColumns, @Nullable IndexingConfig indexingConfig) {
+      @Nullable List<String> groupByColumns, @Nullable IndexingConfig indexingConfig,
+      @Nullable Boolean setSegmentCoveredMetadata) {
     _inputIndexDirs = inputIndexDirs;
     _workingDir = workingDir;
     _recordTransformer = recordTransformer;
@@ -83,28 +89,51 @@ public class SegmentConverter {
     _recordAggregator = recordAggregator;
     _groupByColumns = groupByColumns;
     _indexingConfig = indexingConfig;
+    _setSegmentCoveredMetadata = (setSegmentCoveredMetadata == null) ? false : setSegmentCoveredMetadata;
   }
 
   public List<File> convertSegment() throws Exception {
+    List<String> coveredSegments = new ArrayList<>();
+    String inputTableName = null;
+    Schema inputSchema = null;
+    for (File inputIndexDir : _inputIndexDirs) {
+      SegmentMetadata segmentMetadata = new SegmentMetadataImpl(inputIndexDir);
+      if (inputTableName == null) {
+        inputTableName = segmentMetadata.getTableName();
+      } else if (!inputTableName.equals(segmentMetadata.getTableName())) {
+        throw new InvalidConfigException("Table name has to be the same for all input segments");
+      }
+
+      if (inputSchema == null) {
+        inputSchema = segmentMetadata.getSchema();
+      } else if (!inputSchema.equals(segmentMetadata.getSchema())) {
+        throw new InvalidConfigException("Schema has to be the same for all input segments");
+      }
+
+      coveredSegments.add(segmentMetadata.getName());
+    }
+
     List<File> resultFiles = new ArrayList<>();
     for (int currentPartition = 0; currentPartition < _totalNumPartition; currentPartition++) {
       // Mapping stage
       Preconditions.checkNotNull(_recordTransformer);
       String mapperOutputPath = _workingDir.getPath() + File.separator + MAPPER_PREFIX + currentPartition;
+      String outputSegmentName = (_totalNumPartition <= 1) ? _segmentName : _segmentName + "_" + currentPartition;
+
       try (MapperRecordReader mapperRecordReader = new MapperRecordReader(_inputIndexDirs, _recordTransformer,
           _recordPartitioner, _totalNumPartition, currentPartition)) {
-        buildSegment(mapperOutputPath, _tableName, _segmentName, mapperRecordReader, null);
+        buildSegment(mapperOutputPath, _tableName, outputSegmentName, mapperRecordReader, null, coveredSegments);
       }
-      File outputSegment = new File(mapperOutputPath + File.separator + _segmentName);
+      File outputSegment = new File(mapperOutputPath + File.separator + outputSegmentName);
 
       // Sorting on group-by columns & Reduce stage
       if (_recordAggregator != null && _groupByColumns != null && _groupByColumns.size() > 0) {
         String reducerOutputPath = _workingDir.getPath() + File.separator + REDUCER_PREFIX + currentPartition;
         try (ReducerRecordReader reducerRecordReader = new ReducerRecordReader(outputSegment, _recordAggregator,
             _groupByColumns)) {
-          buildSegment(reducerOutputPath, _tableName, _segmentName, reducerRecordReader, null);
+          buildSegment(reducerOutputPath, _tableName, outputSegmentName, reducerRecordReader, null, coveredSegments);
         }
-        outputSegment = new File(reducerOutputPath + File.separator + _segmentName);
+        outputSegment = new File(reducerOutputPath + File.separator + outputSegmentName);
       }
 
       // Sorting on sorted column and creating indices
@@ -119,9 +148,10 @@ public class SegmentConverter {
           String indexGenerationOutputPath = _workingDir.getPath() + File.separator + INDEX_PREFIX + currentPartition;
           try (
               PinotSegmentRecordReader recordReader = new PinotSegmentRecordReader(outputSegment, null, sortedColumn)) {
-            buildSegment(indexGenerationOutputPath, _tableName, _segmentName, recordReader, _indexingConfig);
+            buildSegment(indexGenerationOutputPath, _tableName, outputSegmentName, recordReader, _indexingConfig,
+                coveredSegments);
           }
-          outputSegment = new File(indexGenerationOutputPath + File.separator + _segmentName);
+          outputSegment = new File(indexGenerationOutputPath + File.separator + outputSegmentName);
         }
       }
 
@@ -133,10 +163,10 @@ public class SegmentConverter {
   /**
    * Helper function to trigger the segment creation
    *
-   * TODO: Support all kinds of indexing (no dictionary)
+   * TODO: use the same segment generation code as offline push job
    */
-  private void buildSegment(String outputPath, String tableName, String segmentName, RecordReader recordReader,
-      IndexingConfig indexingConfig) throws Exception {
+  public void buildSegment(String outputPath, String tableName, String segmentName, RecordReader recordReader,
+      IndexingConfig indexingConfig, List<String> coveredSegments) throws Exception {
     SegmentGeneratorConfig segmentGeneratorConfig = new SegmentGeneratorConfig(recordReader.getSchema());
     segmentGeneratorConfig.setOutDir(outputPath);
     segmentGeneratorConfig.setTableName(tableName);
@@ -146,6 +176,9 @@ public class SegmentConverter {
       if (indexingConfig.getStarTreeIndexSpec() != null) {
         segmentGeneratorConfig.enableStarTreeIndex(indexingConfig.getStarTreeIndexSpec());
       }
+    }
+    if (_setSegmentCoveredMetadata) {
+      segmentGeneratorConfig.setMergeCoverSegments(coveredSegments);
     }
     SegmentIndexCreationDriverImpl driver = new SegmentIndexCreationDriverImpl();
     driver.init(segmentGeneratorConfig, recordReader);
@@ -166,6 +199,7 @@ public class SegmentConverter {
     private RecordAggregator _recordAggregator;
     private List<String> _groupByColumns;
     private IndexingConfig _indexingConfig;
+    private boolean _setCoveredSegmentsMetadata;
 
     public Builder setInputIndexDirs(List<File> inputIndexDirs) {
       _inputIndexDirs = inputIndexDirs;
@@ -217,6 +251,11 @@ public class SegmentConverter {
       return this;
     }
 
+    public Builder setCoveredSegmentsMetadata(boolean setCoveredSegmentsMetadata) {
+      _setCoveredSegmentsMetadata = setCoveredSegmentsMetadata;
+      return this;
+    }
+
     public SegmentConverter build() {
       // Check that the group-by columns and record aggregator are configured together
       if (_groupByColumns != null && _groupByColumns.size() > 0) {
@@ -228,7 +267,8 @@ public class SegmentConverter {
       }
 
       return new SegmentConverter(_inputIndexDirs, _workingDir, _tableName, _segmentName, _totalNumPartition,
-          _recordTransformer, _recordPartitioner, _recordAggregator, _groupByColumns, _indexingConfig);
+          _recordTransformer, _recordPartitioner, _recordAggregator, _groupByColumns, _indexingConfig,
+          _setCoveredSegmentsMetadata);
     }
   }
 }

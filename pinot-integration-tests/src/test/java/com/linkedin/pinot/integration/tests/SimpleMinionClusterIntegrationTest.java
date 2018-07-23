@@ -93,6 +93,8 @@ public class SimpleMinionClusterIntegrationTest extends ClusterTest {
     Map<String, MinionEventObserverFactory> eventObserverFactoryRegistry =
         Collections.singletonMap(TestTaskGenerator.TASK_TYPE, new TestEventObserverFactory());
     startMinions(NUM_MINIONS, taskExecutorFactoryRegistry, eventObserverFactoryRegistry);
+
+    Thread.sleep(100000000);
   }
 
   @Test

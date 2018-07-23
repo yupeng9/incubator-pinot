@@ -44,6 +44,7 @@ import com.linkedin.pinot.core.segment.creator.impl.inv.OnHeapBitmapInvertedInde
 import com.linkedin.pinot.startree.hll.HllConfig;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -316,6 +317,7 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
     properties.setProperty(SEGMENT_TOTAL_NULLS, String.valueOf(totalNulls));
     properties.setProperty(SEGMENT_TOTAL_CONVERSIONS, String.valueOf(totalConversions));
     properties.setProperty(SEGMENT_TOTAL_NULL_COLS, String.valueOf(totalNullCols));
+    properties.setProperty(SEGMENT_MERGE_COVER, config.getMergeCoverSegments());
 
     StarTreeIndexSpec starTreeIndexSpec = config.getStarTreeIndexSpec();
     if (starTreeIndexSpec != null) {

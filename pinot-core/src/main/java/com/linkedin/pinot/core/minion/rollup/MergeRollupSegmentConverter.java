@@ -89,6 +89,7 @@ public class MergeRollupSegmentConverter {
         .setWorkingDir(_workingDir)
         .setRecordTransformer((row) -> row)
         .setIndexingConfig(_indexingConfig)
+        .setCoveredSegmentsMetadata(true)
         .build();
 
     return concatenateSegmentConverter.convertSegment();

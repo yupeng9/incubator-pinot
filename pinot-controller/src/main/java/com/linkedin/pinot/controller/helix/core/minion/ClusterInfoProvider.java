@@ -128,4 +128,8 @@ public class ClusterInfoProvider {
   public String getVipUrl() {
     return _controllerConf.generateVipUrl();
   }
+
+  public void removeSegments(String tableNameWithType, List<String> segmentNames) {
+    _pinotHelixResourceManager.deleteSegments(tableNameWithType, segmentNames);
+  }
 }

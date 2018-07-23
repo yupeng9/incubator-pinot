@@ -23,7 +23,9 @@ import com.linkedin.pinot.common.utils.CommonConstants.Segment.SegmentType;
 import com.linkedin.pinot.core.data.partition.PartitionFunction;
 import com.linkedin.pinot.core.segment.index.ColumnMetadata;
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
@@ -48,6 +50,7 @@ public class ZKMetadataUtils {
 
     // Extract column partition metadata (if any), and set it into segment ZK metadata.
     Map<String, ColumnPartitionMetadata> columnPartitionMap = new HashMap<>();
+    List<String> coveredSegments = new ArrayList<>();
     if (segmentMetadata instanceof SegmentMetadataImpl) {
       SegmentMetadataImpl metadata = (SegmentMetadataImpl) segmentMetadata;
       for (Map.Entry<String, ColumnMetadata> entry : metadata.getColumnMetadataMap().entrySet()) {
@@ -62,10 +65,18 @@ public class ZKMetadataUtils {
           columnPartitionMap.put(column, columnPartitionMetadata);
         }
       }
+
+      for (String segmentName : metadata.getCoveredSegments()) {
+        coveredSegments.add(segmentName);
+      }
     }
 
     if (!columnPartitionMap.isEmpty()) {
       offlineSegmentZKMetadata.setPartitionMetadata(new SegmentPartitionMetadata(columnPartitionMap));
+    }
+
+    if (!coveredSegments.isEmpty()) {
+      offlineSegmentZKMetadata.setMergeCoveredSegments(coveredSegments);
     }
 
     return offlineSegmentZKMetadata;
