@@ -46,6 +46,13 @@ public class MinionConstants {
     public static final String COLUMNS_TO_CONVERT_KEY = "columnsToConvert";
   }
 
+  public static class SegmentMergeRollupTask {
+    public static final String TASK_TYPE = "SegmentMergeRollupTask";
+    public static final String MERGE_TYPE = "mergeType";
+
+  }
+
+
   // Purges rows inside segment that match chosen criteria
   public static class PurgeTask {
     public static final String TASK_TYPE = "PurgeTask";

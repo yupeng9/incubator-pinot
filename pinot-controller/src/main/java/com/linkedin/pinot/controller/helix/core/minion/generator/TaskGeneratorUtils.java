@@ -44,8 +44,12 @@ public class TaskGeneratorUtils {
       if (taskState == TaskState.NOT_STARTED || taskState == TaskState.IN_PROGRESS || taskState == TaskState.STOPPED) {
         for (PinotTaskConfig pinotTaskConfig : clusterInfoProvider.getTaskConfigs(entry.getKey())) {
           Map<String, String> configs = pinotTaskConfig.getConfigs();
-          runningSegments.add(
-              new Segment(configs.get(MinionConstants.TABLE_NAME_KEY), configs.get(MinionConstants.SEGMENT_NAME_KEY)));
+
+          String[] segments = configs.get(MinionConstants.SEGMENT_NAME_KEY).split(",");
+          for (String segment: segments) {
+            runningSegments.add(
+                new Segment(configs.get(MinionConstants.TABLE_NAME_KEY), segment));
+          }
         }
       }
     }

@@ -133,7 +133,7 @@ public class SegmentConverter {
   /**
    * Helper function to trigger the segment creation
    *
-   * TODO: Support all kinds of indexing (no dictionary)
+   * TODO: use the same segment generation code as offline push job
    */
   private void buildSegment(String outputPath, String tableName, String segmentName, RecordReader recordReader,
       IndexingConfig indexingConfig) throws Exception {
