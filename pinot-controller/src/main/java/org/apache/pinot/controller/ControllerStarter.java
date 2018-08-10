@@ -36,6 +36,10 @@ import org.apache.commons.httpclient.HttpConnectionManager;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.helix.HelixManager;
+import org.apache.helix.HelixManagerFactory;
+import org.apache.helix.InstanceType;
+import org.apache.helix.examples.MasterSlaveStateModelFactory;
+import org.apache.helix.participant.StateMachineEngine;
 import org.apache.helix.task.TaskDriver;
 import org.apache.pinot.common.Utils;
 import org.apache.pinot.common.metrics.ControllerMeter;
@@ -83,6 +87,8 @@ public class ControllerStarter {
   private final MetricsRegistry _metricsRegistry;
   private final ControllerMetrics _controllerMetrics;
   private final ExecutorService _executorService;
+  private final HelixManager _helixManager;
+  private final String _controllerInstanceId;
 
   // Can only be constructed after resource manager getting started
   private OfflineSegmentIntervalChecker _offlineSegmentIntervalChecker;
@@ -106,6 +112,9 @@ public class ControllerStarter {
     _controllerMetrics = new ControllerMetrics(_metricsRegistry);
     _executorService =
         Executors.newCachedThreadPool(new ThreadFactoryBuilder().setNameFormat("restapi-multiget-thread-%d").build());
+    _controllerInstanceId = conf.getControllerHost() + "_" + conf.getControllerPort();
+    _helixManager = HelixManagerFactory.getZKHelixManager(conf.getHelixClusterName(), _controllerInstanceId,
+        InstanceType.PARTICIPANT, _config.getZkStr());
   }
 
   public PinotHelixResourceManager getHelixResourceManager() {
@@ -171,6 +180,18 @@ public class ControllerStarter {
     LOGGER.info("Starting Pinot Helix resource manager and connecting to Zookeeper");
     _helixResourceManager.start();
     final HelixManager helixManager = _helixResourceManager.getHelixZkManager();
+
+    try {
+      StateMachineEngine stateMach = _helixManager.getStateMachineEngine();
+      MasterSlaveStateModelFactory factory = new MasterSlaveStateModelFactory();
+      stateMach.registerStateModelFactory("MasterSlave", factory);
+      _helixManager.connect();
+      _helixManager.getClusterManagmentTool().enableInstance(_helixManager.getClusterName(), _helixManager.getInstanceName(), true);
+    } catch (Exception e) {
+      LOGGER.error("Fail to connect to Cluster as a participant!!!");
+      System.exit(-1);
+      return;
+    }
 
     LOGGER.info("Init controller leadership manager");
     ControllerLeadershipManager.init(helixManager);

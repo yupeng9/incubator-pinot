@@ -156,8 +156,10 @@ public class StorageQuotaChecker {
         tableName, tableSubtypeSize.estimatedSizeInBytes, tableSubtypeSize.reportedSizeInBytes);
 
     // Only emit the real percentage of storage quota usage by lead controller, otherwise emit 0L.
-    if (isLeader() && allowedStorageBytes != 0L) {
-      long existingStorageQuotaUtilization = tableSubtypeSize.estimatedSizeInBytes * 100 / allowedStorageBytes;
+    MurmurPartitionFunction partitionFunction = new MurmurPartitionFunction(20);
+    int partitionNum = partitionFunction.getPartition(tableNameWithType);
+    if (_pinotHelixResourceManager.isPartitionLeader(partitionNum) && allowedStorageBytes != 0L) {
+      long existingStorageQuotaUtilization = tableSubtypeSize.estimatedSizeInBytes  * 100 / allowedStorageBytes;
       _controllerMetrics.setValueOfTableGauge(tableName, ControllerGauge.TABLE_STORAGE_QUOTA_UTILIZATION,
           existingStorageQuotaUtilization);
     } else {

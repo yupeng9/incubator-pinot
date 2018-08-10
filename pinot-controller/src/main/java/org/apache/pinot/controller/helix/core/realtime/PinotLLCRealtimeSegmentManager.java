@@ -218,6 +218,16 @@ public class PinotLLCRealtimeSegmentManager {
   }
 
   protected boolean isLeader() {
+//    if (tableNameWithType == null) {
+//      return _helixManager.isLeader();
+//    }
+//    MurmurPartitionFunction partitionFunction = new MurmurPartitionFunction(20);
+//    int partitionNum = partitionFunction.getPartition(tableNameWithType);
+//
+//    return _helixResourceManager.isPartitionLeader(partitionNum);
+////    return true; // isPartitionLeader(partition);
+////    return _helixManager.isLeader();
+
     return ControllerLeadershipManager.getInstance().isLeader();
   }
 
@@ -376,10 +386,10 @@ public class PinotLLCRealtimeSegmentManager {
     URI uriToMoveTo = ControllerConf.getUriFromPath(StringUtil.join("/", tableDirURI.toString(), segmentName));
     PinotFS pinotFS = PinotFSFactory.create(baseDirURI.getScheme());
 
-    if (!isConnected() || !isLeader()) {
+    if (!isConnected() || !isLeader(tableName)) {
       // We can potentially log a different value than what we saw ....
       LOGGER.warn("Lost leadership while committing segment file {}, {} for table {}: isLeader={}, isConnected={}",
-          segmentName, segmentLocation, tableName, isLeader(), isConnected());
+          segmentName, segmentLocation, tableName, isLeader(tableName), isConnected());
       _controllerMetrics.addMeteredGlobalValue(ControllerMeter.CONTROLLER_NOT_LEADER, 1L);
       return false;
     }
@@ -558,17 +568,17 @@ public class PinotLLCRealtimeSegmentManager {
     final String oldZnodePath =
         ZKMetadataProvider.constructPropertyStorePathForSegment(realtimeTableName, committingSegmentNameStr);
 
-    if (!isConnected() || !isLeader()) {
+    if (!isConnected() || !isLeader(realtimeTableName)) {
       // We can potentially log a different value than what we saw ....
       LOGGER.warn("Lost leadership while committing segment metadata for {} for table {}: isLeader={}, isConnected={}",
-          committingSegmentNameStr, realtimeTableName, isLeader(), isConnected());
+          committingSegmentNameStr, realtimeTableName, isLeader(realtimeTableName), isConnected());
       _controllerMetrics.addMeteredGlobalValue(ControllerMeter.CONTROLLER_NOT_LEADER, 1L);
       return false;
     }
     boolean success = writeSegmentToPropertyStore(oldZnodePath, oldZnRecord, realtimeTableName, stat.getVersion());
     if (!success) {
       LOGGER.warn("Fail to write old segment to property store for {} for table {}: isLeader={}, isConnected={}",
-          committingSegmentNameStr, realtimeTableName, isLeader(), isConnected());
+          committingSegmentNameStr, realtimeTableName, isLeader(realtimeTableName), isConnected());
     }
     return success;
   }
@@ -617,11 +627,11 @@ public class PinotLLCRealtimeSegmentManager {
         ZKMetadataProvider.constructPropertyStorePathForSegment(realtimeTableName, newSegmentNameStr);
 
     if (!isNewTableSetup) {
-      if (!isLeader() || !isConnected()) {
+      if (!isLeader(realtimeTableName) || !isConnected()) {
         // We can potentially log a different value than what we saw ....
         LOGGER.warn(
             "Lost leadership while committing new segment metadata for {} for table {}: isLeader={}, isConnected={}",
-            newSegmentNameStr, rawTableName, isLeader(), isConnected());
+            newSegmentNameStr, rawTableName, isLeader(realtimeTableName), isConnected());
         _controllerMetrics.addMeteredGlobalValue(ControllerMeter.CONTROLLER_NOT_LEADER, 1L);
         return false;
       }
@@ -630,7 +640,7 @@ public class PinotLLCRealtimeSegmentManager {
     boolean success = writeSegmentToPropertyStore(newZnodePath, newZnRecord, realtimeTableName);
     if (!success) {
       LOGGER.warn("Fail to write new segment to property store for {} for table {}: isLeader={}, isConnected={}",
-          newSegmentNameStr, rawTableName, isLeader(), isConnected());
+          newSegmentNameStr, rawTableName, isLeader(realtimeTableName), isConnected());
     }
     return success;
   }

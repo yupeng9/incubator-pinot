@@ -118,6 +118,14 @@ public class PinotRealtimeSegmentManager implements HelixPropertyListener, IZkCh
     Map<String, IdealState> idealStateMap = new HashMap<>();
 
     for (String realtimeTableName : _pinotHelixResourceManager.getAllRealtimeTables()) {
+
+      MurmurPartitionFunction partitionFunction = new MurmurPartitionFunction(20);
+      int partitionNum = partitionFunction.getPartition(realtimeTableName);
+      if (_pinotHelixResourceManager.isPartitionLeader(partitionNum)) {
+        LOGGER.info("Not the leader of this Table: {}, ignoring realtime segment property store change.",
+            realtimeTableName);
+        continue;
+      }
       TableConfig tableConfig = _pinotHelixResourceManager.getTableConfig(realtimeTableName);
 
       // Table config might have already been deleted
@@ -297,14 +305,14 @@ public class PinotRealtimeSegmentManager implements HelixPropertyListener, IZkCh
       LOGGER.info("Processing change notification for path: {}", path);
       refreshWatchers(path);
 
-      if (isLeader()) {
+//      if (isLeader()) {
         if (path.matches(REALTIME_SEGMENT_PROPERTY_STORE_PATH_PATTERN) || path
             .matches(REALTIME_TABLE_CONFIG_PROPERTY_STORE_PATH_PATTERN) || path.equals(CONTROLLER_LEADER_CHANGE)) {
           assignRealtimeSegmentsToServerInstancesIfNecessary();
         }
-      } else {
-        LOGGER.info("Not the leader of this cluster, ignoring realtime segment property store change.");
-      }
+//      } else {
+//        LOGGER.info("Not the leader of this cluster, ignoring realtime segment property store change.");
+//      }
     } catch (Exception e) {
       LOGGER.error("Caught exception while processing change for path {}", path, e);
       Utils.rethrowException(e);
