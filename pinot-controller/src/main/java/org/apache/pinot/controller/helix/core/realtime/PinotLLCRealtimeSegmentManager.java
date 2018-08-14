@@ -83,6 +83,7 @@ import org.apache.pinot.controller.helix.core.realtime.segment.CommittingSegment
 import org.apache.pinot.controller.helix.core.realtime.segment.FlushThresholdUpdateManager;
 import org.apache.pinot.controller.helix.core.realtime.segment.FlushThresholdUpdater;
 import org.apache.pinot.controller.util.SegmentCompletionUtils;
+import org.apache.pinot.core.data.partition.MurmurPartitionFunction;
 import org.apache.pinot.core.realtime.segment.ConsumingSegmentAssignmentStrategy;
 import org.apache.pinot.core.realtime.segment.RealtimeSegmentAssignmentStrategy;
 import org.apache.pinot.core.realtime.stream.OffsetCriteria;
@@ -217,18 +218,18 @@ public class PinotLLCRealtimeSegmentManager {
     return INSTANCE;
   }
 
-  protected boolean isLeader() {
-//    if (tableNameWithType == null) {
-//      return _helixManager.isLeader();
-//    }
-//    MurmurPartitionFunction partitionFunction = new MurmurPartitionFunction(20);
-//    int partitionNum = partitionFunction.getPartition(tableNameWithType);
-//
-//    return _helixResourceManager.isPartitionLeader(partitionNum);
+  protected boolean isLeader(String tableNameWithType) {
+    if (tableNameWithType == null) {
+      return _helixManager.isLeader();
+    }
+    MurmurPartitionFunction partitionFunction = new MurmurPartitionFunction(20);
+    int partitionNum = partitionFunction.getPartition(tableNameWithType);
+
+    return _helixResourceManager.isPartitionLeader(partitionNum);
 ////    return true; // isPartitionLeader(partition);
 ////    return _helixManager.isLeader();
 
-    return ControllerLeadershipManager.getInstance().isLeader();
+//    return ControllerLeadershipManager.getInstance().isLeader();
   }
 
   protected boolean isConnected() {

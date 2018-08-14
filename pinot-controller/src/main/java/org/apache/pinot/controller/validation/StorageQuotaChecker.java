@@ -33,6 +33,7 @@ import org.apache.pinot.common.utils.DataSize;
 import org.apache.pinot.controller.ControllerLeadershipManager;
 import org.apache.pinot.controller.helix.core.PinotHelixResourceManager;
 import org.apache.pinot.controller.util.TableSizeReader;
+import org.apache.pinot.core.data.partition.MurmurPartitionFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

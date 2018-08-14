@@ -37,6 +37,7 @@ import org.apache.pinot.common.utils.LLCSegmentName;
 import org.apache.pinot.controller.ControllerConf;
 import org.apache.pinot.controller.ControllerLeadershipManager;
 import org.apache.pinot.controller.helix.core.realtime.segment.CommittingSegmentDescriptor;
+import org.apache.pinot.core.data.partition.MurmurPartitionFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

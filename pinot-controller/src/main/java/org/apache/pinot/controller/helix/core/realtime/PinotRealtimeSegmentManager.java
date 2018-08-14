@@ -56,6 +56,7 @@ import org.apache.pinot.controller.ControllerLeadershipManager;
 import org.apache.pinot.controller.LeadershipChangeSubscriber;
 import org.apache.pinot.controller.helix.core.PinotHelixResourceManager;
 import org.apache.pinot.controller.helix.core.PinotTableIdealStateBuilder;
+import org.apache.pinot.core.data.partition.MurmurPartitionFunction;
 import org.apache.pinot.core.query.utils.Pair;
 import org.apache.pinot.core.realtime.stream.StreamConfig;
 import org.apache.zookeeper.data.Stat;
