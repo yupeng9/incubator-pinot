@@ -139,6 +139,8 @@ public class RealtimeSegmentConverter {
         new RealtimeSegmentSegmentCreationDataSource(realtimeSegmentImpl, reader, dataSchema);
     driver.init(genConfig, dataSource);
     driver.build();
+    System.out.println("Segment generated. Stop object allocation tracking");
+    Thread.sleep(3600_000L);  // Sleep for an hour so we can save stuff
 
     if (segmentPartitionConfig != null && segmentPartitionConfig.getColumnPartitionMap() != null) {
       Map<String, ColumnPartitionConfig> columnPartitionMap = segmentPartitionConfig.getColumnPartitionMap();

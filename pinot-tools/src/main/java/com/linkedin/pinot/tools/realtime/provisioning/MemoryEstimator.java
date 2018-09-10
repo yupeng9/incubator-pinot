@@ -17,19 +17,26 @@ package com.linkedin.pinot.tools.realtime.provisioning;
 
 import com.linkedin.pinot.common.config.TableConfig;
 import com.linkedin.pinot.common.data.FieldSpec;
+import com.linkedin.pinot.common.data.Schema;
 import com.linkedin.pinot.common.metadata.segment.RealtimeSegmentZKMetadata;
+import com.linkedin.pinot.common.metrics.ServerMetrics;
 import com.linkedin.pinot.common.utils.DataSize;
 import com.linkedin.pinot.core.data.GenericRow;
 import com.linkedin.pinot.core.data.readers.PinotSegmentRecordReader;
+import com.linkedin.pinot.core.indexsegment.generator.SegmentVersion;
 import com.linkedin.pinot.core.indexsegment.mutable.MutableSegmentImpl;
 import com.linkedin.pinot.core.io.readerwriter.RealtimeIndexOffHeapMemoryManager;
 import com.linkedin.pinot.core.io.writer.impl.DirectMemoryManager;
+import com.linkedin.pinot.core.realtime.converter.RealtimeSegmentConverter;
 import com.linkedin.pinot.core.realtime.impl.RealtimeSegmentConfig;
 import com.linkedin.pinot.core.realtime.impl.RealtimeSegmentStatsHistory;
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
+import com.yammer.metrics.core.MetricsRegistry;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
@@ -61,6 +68,7 @@ public class MemoryEstimator {
   private String[][] _totalMemoryPerHost;
   private String[][] _optimalSegmentSize;
   private String[][] _consumingMemoryPerHost;
+  private String _sortedColumn;
 
   public MemoryEstimator(TableConfig tableConfig, File sampleCompletedSegment, long sampleSegmentConsumedSeconds) {
     _tableConfig = tableConfig;
@@ -79,6 +87,11 @@ public class MemoryEstimator {
     }
     if (CollectionUtils.isNotEmpty(_tableConfig.getIndexingConfig().getInvertedIndexColumns())) {
       _invertedIndexColumns.addAll(_tableConfig.getIndexingConfig().getInvertedIndexColumns());
+    }
+    final List<String> sortedColumns = _tableConfig.getIndexingConfig().getSortedColumn();
+    if (sortedColumns != null && sortedColumns.size() > 0 && !_invertedIndexColumns.contains(_sortedColumn)) {
+      _sortedColumn = sortedColumns.get(0);
+      _invertedIndexColumns.add(_sortedColumn);
     }
     _avgMultiValues = getAvgMultiValues();
 
@@ -139,6 +152,31 @@ public class MemoryEstimator {
       }
     } catch (Exception e) {
       throw new RuntimeException("Caught exception when indexing rows");
+    }
+
+    final File tempSegmentFolder = new File(_tableDataDir, _segmentMetadata.getName() + "-" + String.valueOf(System.currentTimeMillis()));
+    final Schema schema = _segmentMetadata.getSchema();
+    RealtimeSegmentConverter converter =
+        new RealtimeSegmentConverter(mutableSegmentImpl, tempSegmentFolder.getAbsolutePath(),
+            _segmentMetadata.getSchema(), _segmentMetadata.getTableName(), schema.getTimeColumnName(),
+            _segmentMetadata.getName(), _sortedColumn, new ArrayList<>(_invertedIndexColumns),
+            new ArrayList<>(_noDictionaryColumns), null);
+    System.gc();
+    System.gc();
+    System.out.println("Start object allocation tracking");
+    try {
+      Thread.sleep(60_000L);
+      System.out.println("Starting to build segment");
+      converter.build(SegmentVersion.v3, new ServerMetrics(new MetricsRegistry()));
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    System.out.println("Segment created");
+    try {
+      Thread.sleep(10_000_000L);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
 
     // dump stats into stats file
