@@ -81,16 +81,16 @@ public class FileUploadPathProvider {
       if (!pinotFS.exists(_baseDataDirURI)) {
         pinotFS.mkdir(_baseDataDirURI);
       }
-      _schemasTmpDirURI = new URI(_baseDataDirURI + SCHEMAS_TEMP);
-      if (!pinotFS.exists(_schemasTmpDirURI)) {
-        pinotFS.mkdir(_schemasTmpDirURI);
-      }
 
       // All directories that are always local
       PinotFS localPinotFS = new LocalPinotFS();
       _localTempDirURI = new URI(localTempDir);
       if (!localPinotFS.exists(_localTempDirURI)) {
         localPinotFS.mkdir(_localTempDirURI);
+      }
+      _schemasTmpDirURI = new URI(_localTempDirURI + SCHEMAS_TEMP);
+      if (!pinotFS.exists(_schemasTmpDirURI)) {
+        pinotFS.mkdir(_schemasTmpDirURI);
       }
       _fileUploadTmpDirURI = new URI(_localTempDirURI + FILE_UPLOAD_TEMP_PATH);
       if (!localPinotFS.exists(_fileUploadTmpDirURI)) {
