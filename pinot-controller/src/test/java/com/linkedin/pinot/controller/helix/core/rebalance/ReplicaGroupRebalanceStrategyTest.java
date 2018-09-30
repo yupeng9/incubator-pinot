@@ -54,34 +54,29 @@ public class ReplicaGroupRebalanceStrategyTest extends ControllerTest {
 
   @BeforeClass
   public void setUp() throws Exception {
-    try {
-      startZk();
-      ControllerConf config = getDefaultControllerConfiguration();
-      config.setTableMinReplicas(MIN_NUM_REPLICAS);
-      startController(config);
-      ControllerRequestBuilderUtil.addFakeBrokerInstancesToAutoJoinHelixCluster(getHelixClusterName(),
-          ZkStarter.DEFAULT_ZK_STR, NUM_BROKER_INSTANCES, true);
-      ControllerRequestBuilderUtil.addFakeDataInstancesToAutoJoinHelixCluster(getHelixClusterName(),
-          ZkStarter.DEFAULT_ZK_STR, NUM_SERVER_INSTANCES, true);
+    startZk();
+    ControllerConf config = getDefaultControllerConfiguration();
+    config.setTableMinReplicas(MIN_NUM_REPLICAS);
+    startController(config);
+    ControllerRequestBuilderUtil.addFakeBrokerInstancesToAutoJoinHelixCluster(getHelixClusterName(),
+        ZkStarter.DEFAULT_ZK_STR, NUM_BROKER_INSTANCES, true);
+    ControllerRequestBuilderUtil.addFakeDataInstancesToAutoJoinHelixCluster(getHelixClusterName(),
+        ZkStarter.DEFAULT_ZK_STR, NUM_SERVER_INSTANCES, true);
 
-      _offlineBuilder.setTableName("testOfflineTable")
-          .setTimeColumnName("timeColumn")
-          .setTimeType("DAYS")
-          .setRetentionTimeUnit("DAYS")
-          .setRetentionTimeValue("5");
+    _offlineBuilder.setTableName("testOfflineTable")
+        .setTimeColumnName("timeColumn")
+        .setTimeType("DAYS")
+        .setRetentionTimeUnit("DAYS")
+        .setRetentionTimeValue("5");
 
-      setUpTable();
+    setUpTable();
 
-      // Join 4 more servers as untagged
-      String[] instanceNames = {"Server_localhost_a", "Server_localhost_b", "Server_localhost_c", "Server_localhost_d"};
-      for (String instanceName : instanceNames) {
-        ControllerRequestBuilderUtil.addFakeDataInstanceToAutoJoinHelixCluster(getHelixClusterName(),
-            ZkStarter.DEFAULT_ZK_STR, instanceName, true);
-        _helixAdmin.removeInstanceTag(getHelixClusterName(), instanceName, OFFLINE_TENENT_NAME);
-      }
-
-    } catch(Exception e) {
-      e.printStackTrace();
+    // Join 4 more servers as untagged
+    String[] instanceNames = {"Server_localhost_a", "Server_localhost_b", "Server_localhost_c", "Server_localhost_d"};
+    for (String instanceName : instanceNames) {
+      ControllerRequestBuilderUtil.addFakeDataInstanceToAutoJoinHelixCluster(getHelixClusterName(),
+          ZkStarter.DEFAULT_ZK_STR, instanceName, true);
+      _helixAdmin.removeInstanceTag(getHelixClusterName(), instanceName, OFFLINE_TENENT_NAME);
     }
   }
 
@@ -168,9 +163,28 @@ public class ReplicaGroupRebalanceStrategyTest extends ControllerTest {
     Assert.assertTrue(validateTableLevelReplicaGroupRebalance());
     Assert.assertTrue(validateNumSegments(INITIAL_NUM_SEGMENTS));
 
-    // Test removing servers to each replica group
+    // Test removing servers from the same group
     _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_a", OFFLINE_TENENT_NAME);
-    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_d", OFFLINE_TENENT_NAME);
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_c", OFFLINE_TENENT_NAME);
+    targetNumInstancePerPartition = 4;
+    targetNumReplicaGroup = 2;
+    updateTableConfig(targetNumInstancePerPartition, targetNumReplicaGroup);
+    _helixResourceManager.rebalanceTable(TABLE_NAME, CommonConstants.Helix.TableType.OFFLINE, rebalanceUserConfig);
+    Assert.assertTrue(validateTableLevelReplicaGroupRebalance());
+    Assert.assertTrue(validateNumSegments(INITIAL_NUM_SEGMENTS));
+
+    // add the server back and test removing another combination of servers
+    _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_a", OFFLINE_TENENT_NAME);
+    _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_c", OFFLINE_TENENT_NAME);
+    targetNumInstancePerPartition = 5;
+    targetNumReplicaGroup = 2;
+    updateTableConfig(targetNumInstancePerPartition, targetNumReplicaGroup);
+    _helixResourceManager.rebalanceTable(TABLE_NAME, CommonConstants.Helix.TableType.OFFLINE, rebalanceUserConfig);
+    Assert.assertTrue(validateTableLevelReplicaGroupRebalance());
+    Assert.assertTrue(validateNumSegments(INITIAL_NUM_SEGMENTS));
+
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_a", OFFLINE_TENENT_NAME);
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_b", OFFLINE_TENENT_NAME);
     targetNumInstancePerPartition = 4;
     targetNumReplicaGroup = 2;
     updateTableConfig(targetNumInstancePerPartition, targetNumReplicaGroup);
@@ -192,8 +206,8 @@ public class ReplicaGroupRebalanceStrategyTest extends ControllerTest {
     }
 
     // Test removing two more servers to each replica group with force run
-    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_b", OFFLINE_TENENT_NAME);
     _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_c", OFFLINE_TENENT_NAME);
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_d", OFFLINE_TENENT_NAME);
 
     targetNumInstancePerPartition = 3;
     targetNumReplicaGroup = 2;
