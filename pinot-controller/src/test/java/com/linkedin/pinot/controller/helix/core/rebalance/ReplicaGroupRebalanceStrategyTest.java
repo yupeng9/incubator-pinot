@@ -18,6 +18,7 @@ package com.linkedin.pinot.controller.helix.core.rebalance;
 import com.linkedin.pinot.common.config.ReplicaGroupStrategyConfig;
 import com.linkedin.pinot.common.config.TableConfig;
 import com.linkedin.pinot.common.config.TableNameBuilder;
+import com.linkedin.pinot.common.exception.InvalidConfigException;
 import com.linkedin.pinot.common.partition.ReplicaGroupPartitionAssignment;
 import com.linkedin.pinot.common.partition.ReplicaGroupPartitionAssignmentGenerator;
 import com.linkedin.pinot.common.utils.CommonConstants;
@@ -191,7 +192,7 @@ public class ReplicaGroupRebalanceStrategyTest extends ControllerTest {
       Thread.sleep(100);
     }
 
-    // Test removing two more servers to each replica group with force run
+    // Test removing two more servers to each replica group
     _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_b", OFFLINE_TENENT_NAME);
     _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_c", OFFLINE_TENENT_NAME);
 
@@ -201,6 +202,24 @@ public class ReplicaGroupRebalanceStrategyTest extends ControllerTest {
     _helixResourceManager.rebalanceTable(TABLE_NAME, CommonConstants.Helix.TableType.OFFLINE, rebalanceUserConfig);
     Assert.assertTrue(validateTableLevelReplicaGroupRebalance());
     Assert.assertTrue(validateNumSegments(INITIAL_NUM_SEGMENTS));
+
+    // Test removing two servers from the same replica group and try remove one server from replica group
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_4", OFFLINE_TENENT_NAME);
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_5", OFFLINE_TENENT_NAME);
+
+    targetNumInstancePerPartition = 2;
+    targetNumReplicaGroup = 2;
+    updateTableConfig(targetNumInstancePerPartition, targetNumReplicaGroup);
+    try {
+      _helixResourceManager.rebalanceTable(TABLE_NAME, CommonConstants.Helix.TableType.OFFLINE, rebalanceUserConfig);
+      Assert.fail();
+    } catch (InvalidConfigException e) {
+      // no nothing
+    } finally {
+      // restore tags
+      _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_4", OFFLINE_TENENT_NAME);
+      _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_5", OFFLINE_TENENT_NAME);
+    }
 
     // Test adding a replica group
     _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_a", OFFLINE_TENENT_NAME);
@@ -225,6 +244,25 @@ public class ReplicaGroupRebalanceStrategyTest extends ControllerTest {
     removeNewSegments();
     while (!allSegmentsPushedToIdealState(TABLE_NAME, INITIAL_NUM_SEGMENTS)) {
       Thread.sleep(100);
+    }
+
+    // Test removing a replica group with taking out 3 wrong servers
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_0", OFFLINE_TENENT_NAME);
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_1", OFFLINE_TENENT_NAME);
+    _helixAdmin.removeInstanceTag(getHelixClusterName(), "Server_localhost_5", OFFLINE_TENENT_NAME);
+    targetNumInstancePerPartition = 3;
+    targetNumReplicaGroup = 2;
+    updateTableConfig(targetNumInstancePerPartition, targetNumReplicaGroup);
+    try {
+      _helixResourceManager.rebalanceTable(TABLE_NAME, CommonConstants.Helix.TableType.OFFLINE, rebalanceUserConfig);
+      Assert.fail();
+    } catch (InvalidConfigException e) {
+      // no nothing
+    } finally {
+      // restore tags
+      _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_0", OFFLINE_TENENT_NAME);
+      _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_1", OFFLINE_TENENT_NAME);
+      _helixAdmin.addInstanceTag(getHelixClusterName(), "Server_localhost_5", OFFLINE_TENENT_NAME);
     }
 
     // Test removing a replica group

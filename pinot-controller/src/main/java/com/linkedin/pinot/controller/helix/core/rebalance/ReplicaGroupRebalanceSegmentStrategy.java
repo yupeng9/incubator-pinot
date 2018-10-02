@@ -177,8 +177,7 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
     ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment =
         partitionAssignmentGenerator.getReplicaGroupPartitionAssignment(tableNameWithType);
     if (oldReplicaGroupPartitionAssignment == null) {
-      throw new InvalidConfigException(
-          "Replica group partition assignment does not exist for " + tableNameWithType);
+      throw new InvalidConfigException("Replica group partition assignment does not exist for " + tableNameWithType);
     }
 
     // Fetch the previous replica group configurations
@@ -192,7 +191,44 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
     List<String> removedServers = new ArrayList<>(oldServerInstances);
     removedServers.removeAll(serverInstances);
 
+    // Compute rebalance type
+    ReplicaGroupRebalanceType rebalanceType =
+        computeRebalanceType(oldReplicaGroupPartitionAssignment, oldNumInstancesPerPartition, oldNumReplicaGroup,
+            targetNumReplicaGroup, targetNumInstancesPerPartition, addedServers, removedServers);
+    LOGGER.info("Replica group rebalance type: " + rebalanceType);
+
     // Create the new replica group partition assignment
+    switch (rebalanceType) {
+      case REPLACE:
+        return replaceServers(oldReplicaGroupPartitionAssignment, removedServers, addedServers);
+      case ADD_SERVER:
+        return addServersToReplicaGroup(oldReplicaGroupPartitionAssignment, targetNumReplicaGroup, addedServers);
+      case REMOVE_SERVER:
+        return removeServersFromReplicaGroup(oldReplicaGroupPartitionAssignment, removedServers);
+      case ADD_REPLICA_GROUP:
+        return addReplicaGroups(oldReplicaGroupPartitionAssignment, targetNumReplicaGroup,
+            targetNumInstancesPerPartition, addedServers);
+      case REMOVE_REPLICA_GROUP:
+        return removeReplicaGroups(oldReplicaGroupPartitionAssignment, removedServers);
+      default:
+        String errorMessage =
+            "Not supported replica group rebalance operation.\nNeed to check server tags and replica group config to"
+                + " make sure only one maintenance step is asked (Removing/adding servers from replica group, "
+                + "removing/adding replica groups, replacing instances).\n" + "( oldNumInstancesPerPartition: "
+                + oldNumInstancesPerPartition + ", targetNumInstancesPerPartition: " + targetNumInstancesPerPartition
+                + ", oldNumReplicaGroup: " + oldNumReplicaGroup + ", targetNumReplicaGroup: " + targetNumReplicaGroup
+                + ", numAddedServers: " + addedServers.size() + ", numRemovedServers: " + removedServers.size()
+                + ", addedServers: " + String.join(",", addedServers) + ", removedServers: " + String.join(",",
+                removedServers) + " )";
+        LOGGER.info(errorMessage);
+        throw new InvalidConfigException(errorMessage);
+    }
+  }
+
+  private ReplicaGroupPartitionAssignment replaceServers(
+      ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment,
+      List<String> removedServers, List<String> addedServers) {
+    // Create new replica group partition assignment
     ReplicaGroupPartitionAssignment newReplicaGroupPartitionAssignment =
         new ReplicaGroupPartitionAssignment(oldReplicaGroupPartitionAssignment.getTableName());
 
@@ -204,74 +240,111 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
       }
     }
 
-    // Compute rebalance type
-    ReplicaGroupRebalanceType rebalanceType =
-        computeRebalanceType(oldNumInstancesPerPartition, oldNumReplicaGroup, targetNumReplicaGroup,
-            targetNumInstancesPerPartition, addedServers, removedServers);
-    LOGGER.info("Replica group rebalance type: " + rebalanceType);
+    for (int partitionId = 0; partitionId < oldReplicaGroupPartitionAssignment.getNumPartitions(); partitionId++) {
+      int currentNewReplicaGroupId = 0;
+      for (int groupId = 0; groupId < oldReplicaGroupPartitionAssignment.getNumReplicaGroups(); groupId++) {
+        List<String> oldReplicaGroup =
+            oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partitionId, groupId);
+        List<String> newReplicaGroup = new ArrayList<>();
+        // Replace the server based on the old to new server mapping
+        for (String oldServer : oldReplicaGroup) {
+          if (!oldToNewServerMapping.containsKey(oldServer)) {
+            newReplicaGroup.add(oldServer);
+          } else {
+            newReplicaGroup.add(oldToNewServerMapping.get(oldServer));
+          }
+        }
+        LOGGER.info("Setting new replica group ( partitionId: " + partitionId + ", replicaGroupId: " + groupId
+            + ", server list: " + StringUtils.join(",", newReplicaGroup));
+        newReplicaGroupPartitionAssignment.setInstancesToReplicaGroup(partitionId, currentNewReplicaGroupId++,
+            newReplicaGroup);
+      }
+    }
+    return newReplicaGroupPartitionAssignment;
+  }
+
+  private ReplicaGroupPartitionAssignment addServersToReplicaGroup(
+      ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment, int targetNumReplicaGroup,
+      List<String> addedServers) {
+    // Create new replica group partition assignment
+    ReplicaGroupPartitionAssignment newReplicaGroupPartitionAssignment =
+        new ReplicaGroupPartitionAssignment(oldReplicaGroupPartitionAssignment.getTableName());
+
+    for (int partitionId = 0; partitionId < oldReplicaGroupPartitionAssignment.getNumPartitions(); partitionId++) {
+      int currentNewReplicaGroupId = 0;
+      for (int groupId = 0; groupId < oldReplicaGroupPartitionAssignment.getNumReplicaGroups(); groupId++) {
+        List<String> oldReplicaGroup =
+            oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partitionId, groupId);
+        List<String> newReplicaGroup = new ArrayList<>();
+
+        newReplicaGroup.addAll(oldReplicaGroup);
+        // Assign new servers to the replica group
+        for (int serverIndex = 0; serverIndex < addedServers.size(); serverIndex++) {
+          if (serverIndex % targetNumReplicaGroup == groupId) {
+            newReplicaGroup.add(addedServers.get(serverIndex));
+          }
+        }
+
+        LOGGER.info("Setting new replica group ( partitionId: " + partitionId + ", replicaGroupId: " + groupId
+            + ", server list: " + StringUtils.join(",", newReplicaGroup));
+        newReplicaGroupPartitionAssignment.setInstancesToReplicaGroup(partitionId, currentNewReplicaGroupId++,
+            newReplicaGroup);
+      }
+    }
+
+    return newReplicaGroupPartitionAssignment;
+  }
+
+  private ReplicaGroupPartitionAssignment removeServersFromReplicaGroup(
+      ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment, List<String> removedServers) {
+
+    // Create new replica group partition assignment
+    ReplicaGroupPartitionAssignment newReplicaGroupPartitionAssignment =
+        new ReplicaGroupPartitionAssignment(oldReplicaGroupPartitionAssignment.getTableName());
 
     // For now, we don't support the rebalance for partition level replica group so "numPartitions" will always be 1.
     for (int partitionId = 0; partitionId < oldReplicaGroupPartitionAssignment.getNumPartitions(); partitionId++) {
       int currentNewReplicaGroupId = 0;
-      for (int groupId = 0; groupId < oldNumReplicaGroup; groupId++) {
+      for (int groupId = 0; groupId < oldReplicaGroupPartitionAssignment.getNumReplicaGroups(); groupId++) {
         List<String> oldReplicaGroup =
             oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partitionId, groupId);
         List<String> newReplicaGroup = new ArrayList<>();
-        boolean removeGroup = false;
 
-        // Based on the rebalance type, compute the new replica group partition assignment accordingly
-        switch (rebalanceType) {
-          case REPLACE:
-            // Swap the removed server with the added one.
-            for (String oldServer : oldReplicaGroup) {
-              if (!oldToNewServerMapping.containsKey(oldServer)) {
-                newReplicaGroup.add(oldServer);
-              } else {
-                newReplicaGroup.add(oldToNewServerMapping.get(oldServer));
-              }
-            }
-            break;
-          case ADD_SERVER:
-            newReplicaGroup.addAll(oldReplicaGroup);
-            // Assign new servers to the replica group
-            for (int serverIndex = 0; serverIndex < addedServers.size(); serverIndex++) {
-              if (serverIndex % targetNumReplicaGroup == groupId) {
-                newReplicaGroup.add(addedServers.get(serverIndex));
-              }
-            }
-            break;
-          case REMOVE_SERVER:
-            // Only add the servers that are not in the removed list
-            newReplicaGroup.addAll(oldReplicaGroup);
-            newReplicaGroup.removeAll(removedServers);
-            break;
-          case ADD_REPLICA_GROUP:
-            // Add all servers for original replica groups and add new replica groups later
-            newReplicaGroup.addAll(oldReplicaGroup);
-            break;
-          case REMOVE_REPLICA_GROUP:
-            newReplicaGroup.addAll(oldReplicaGroup);
-            // mark the group if this is the replica group that needs to be removed
-            if (removedServers.containsAll(oldReplicaGroup)) {
-              removeGroup = true;
-            }
-            break;
-          default:
-            String errorMessage =
-                "Not supported replica group rebalance operation. Need to check server tags and replica group config to"
-                    + " make sure only one maintenance step is asked. ( oldNumInstancesPerPatition: "
-                    + oldNumInstancesPerPartition + ", targetNumInstancesPerPartition: "
-                    + targetNumInstancesPerPartition + ", oldNumReplicaGroup: " + oldNumReplicaGroup
-                    + ", targetNumReplicaGroup: " + targetNumReplicaGroup + ", numAddedServers: " + addedServers.size()
-                    + ", numRemovedServers: " + removedServers.size() + " )";
-            LOGGER.info(errorMessage);
-            throw new InvalidConfigException(errorMessage);
-        }
-        if (!removeGroup) {
-          LOGGER.info("Setting new replica group ( partitionId: " + partitionId + ", replicaGroupId: " + groupId
-              + ", server list: " + StringUtils.join(",", newReplicaGroup));
-          newReplicaGroupPartitionAssignment.setInstancesToReplicaGroup(partitionId, currentNewReplicaGroupId++, newReplicaGroup);
-        }
+        // Only add the servers that are not in the removed list
+        newReplicaGroup.addAll(oldReplicaGroup);
+        newReplicaGroup.removeAll(removedServers);
+
+        LOGGER.info("Setting new replica group ( partitionId: " + partitionId + ", replicaGroupId: " + groupId
+            + ", server list: " + StringUtils.join(",", newReplicaGroup));
+        newReplicaGroupPartitionAssignment.setInstancesToReplicaGroup(partitionId, currentNewReplicaGroupId++,
+            newReplicaGroup);
+      }
+    }
+
+    return newReplicaGroupPartitionAssignment;
+  }
+
+  private ReplicaGroupPartitionAssignment addReplicaGroups(
+      ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment, int targetNumReplicaGroup,
+      int targetNumInstancesPerPartition, List<String> addedServers) {
+    // Create new replica group partition assignment
+    ReplicaGroupPartitionAssignment newReplicaGroupPartitionAssignment =
+        new ReplicaGroupPartitionAssignment(oldReplicaGroupPartitionAssignment.getTableName());
+
+    // For now, we don't support the rebalance for partition level replica group so "numPartitions" will always be 1.
+    for (int partitionId = 0; partitionId < oldReplicaGroupPartitionAssignment.getNumPartitions(); partitionId++) {
+      int currentNewReplicaGroupId = 0;
+      for (int groupId = 0; groupId < oldReplicaGroupPartitionAssignment.getNumReplicaGroups(); groupId++) {
+        List<String> oldReplicaGroup =
+            oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partitionId, groupId);
+        List<String> newReplicaGroup = new ArrayList<>();
+
+        // Add all servers for original replica groups and add new replica groups later
+        newReplicaGroup.addAll(oldReplicaGroup);
+        LOGGER.info("Setting new replica group ( partitionId: " + partitionId + ", replicaGroupId: " + groupId
+            + ", server list: " + StringUtils.join(",", newReplicaGroup));
+        newReplicaGroupPartitionAssignment.setInstancesToReplicaGroup(partitionId, currentNewReplicaGroupId++,
+            newReplicaGroup);
       }
 
       // Adding new replica groups if needed
@@ -289,14 +362,47 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
     return newReplicaGroupPartitionAssignment;
   }
 
+  private ReplicaGroupPartitionAssignment removeReplicaGroups(
+      ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment, List<String> removedServers) {
+    // Create new replica group partition assignment
+    ReplicaGroupPartitionAssignment newReplicaGroupPartitionAssignment =
+        new ReplicaGroupPartitionAssignment(oldReplicaGroupPartitionAssignment.getTableName());
+
+    for (int partitionId = 0; partitionId < oldReplicaGroupPartitionAssignment.getNumPartitions(); partitionId++) {
+      int currentNewReplicaGroupId = 0;
+      for (int groupId = 0; groupId < oldReplicaGroupPartitionAssignment.getNumReplicaGroups(); groupId++) {
+        List<String> oldReplicaGroup =
+            oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partitionId, groupId);
+        List<String> newReplicaGroup = new ArrayList<>();
+        boolean removeGroup = false;
+
+        newReplicaGroup.addAll(oldReplicaGroup);
+        // mark the group if this is the replica group that needs to be removed
+        if (removedServers.containsAll(oldReplicaGroup)) {
+          removeGroup = true;
+        }
+        if (!removeGroup) {
+          LOGGER.info("Setting new replica group ( partitionId: " + partitionId + ", replicaGroupId: " + groupId
+              + ", server list: " + StringUtils.join(",", newReplicaGroup));
+          newReplicaGroupPartitionAssignment.setInstancesToReplicaGroup(partitionId, currentNewReplicaGroupId++,
+              newReplicaGroup);
+        }
+      }
+    }
+
+    return newReplicaGroupPartitionAssignment;
+  }
+
+
   /**
    * Given the list of added/removed servers and the old and new replica group configurations, compute the
    * type of update (e.g. replace server, add servers to each replica group, add replica groups..)
    *
    * @return the update type
    */
-  private ReplicaGroupRebalanceType computeRebalanceType(int oldNumInstancesPerPartition, int oldNumReplicaGroup,
-      int targetNumReplicaGroup, int targetNumInstancesPerPartition, List<String> addedServers,
+  private ReplicaGroupRebalanceType computeRebalanceType(
+      ReplicaGroupPartitionAssignment oldReplicaGroupPartitionAssignment, int oldNumInstancesPerPartition,
+      int oldNumReplicaGroup, int targetNumReplicaGroup, int targetNumInstancesPerPartition, List<String> addedServers,
       List<String> removedServers) {
     boolean sameNumInstancesPerPartition = oldNumInstancesPerPartition == targetNumInstancesPerPartition;
     boolean sameNumReplicaGroup = oldNumReplicaGroup == targetNumReplicaGroup;
@@ -311,7 +417,22 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
         return ReplicaGroupRebalanceType.ADD_REPLICA_GROUP;
       } else if (oldNumReplicaGroup > targetNumReplicaGroup && isAddedServersSizeZero && !isRemovedServersSizeZero
           && removedServers.size() % targetNumInstancesPerPartition == 0) {
-        return ReplicaGroupRebalanceType.REMOVE_REPLICA_GROUP;
+        // Check if all servers from replica groups are correctly untagged
+        boolean removeReplicaGroup = false;
+        for (int partition = 0; partition < oldReplicaGroupPartitionAssignment.getNumPartitions(); partition++) {
+          for (int replica = 0; replica < oldNumReplicaGroup; replica++) {
+            List<String> instancesFromOldReplicaGroup =
+                oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partition, replica);
+            Set<String> servers = new HashSet<>(instancesFromOldReplicaGroup);
+            servers.removeAll(removedServers);
+            if (servers.isEmpty()) {
+              removeReplicaGroup = true;
+            }
+          }
+        }
+        if (removeReplicaGroup) {
+          return ReplicaGroupRebalanceType.REMOVE_REPLICA_GROUP;
+        }
       }
     } else if (sameNumReplicaGroup) {
       if (oldNumInstancesPerPartition < targetNumInstancesPerPartition && isRemovedServersSizeZero
@@ -319,7 +440,22 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
         return ReplicaGroupRebalanceType.ADD_SERVER;
       } else if (oldNumInstancesPerPartition > targetNumInstancesPerPartition && !isRemovedServersSizeZero
           && isAddedServersSizeZero && removedServers.size() % targetNumReplicaGroup == 0) {
-        return ReplicaGroupRebalanceType.REMOVE_SERVER;
+        // Check if all replica group after untagging have the number of targetNumInstancesPerPartition
+        boolean removeServer = true;
+        for (int partition = 0; partition < oldReplicaGroupPartitionAssignment.getNumPartitions(); partition++) {
+          for (int replica = 0; replica < oldNumReplicaGroup; replica++) {
+            List<String> instancesFromOldReplicaGroup =
+                oldReplicaGroupPartitionAssignment.getInstancesfromReplicaGroup(partition, replica);
+            Set<String> serversInCurrentReplicaGroup = new HashSet<>(instancesFromOldReplicaGroup);
+            serversInCurrentReplicaGroup.removeAll(removedServers);
+            if (targetNumInstancesPerPartition != serversInCurrentReplicaGroup.size()) {
+              removeServer = false;
+            }
+          }
+        }
+        if (removeServer) {
+          return ReplicaGroupRebalanceType.REMOVE_SERVER;
+        }
       }
     }
     return ReplicaGroupRebalanceType.UNSUPPORTED;
@@ -349,7 +485,7 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
 
     // Add servers to the mapping
     for (String server : addedServers) {
-      serverToSegments.put(server, new LinkedList<String>());
+      serverToSegments.put(server, new LinkedList<>());
     }
 
     // Remove servers from the mapping
@@ -503,7 +639,7 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
     for (String segment : segmentToServerMapping.keySet()) {
       for (String server : segmentToServerMapping.get(segment).keySet()) {
         if (!serverToSegments.containsKey(server)) {
-          serverToSegments.put(server, new LinkedList<String>());
+          serverToSegments.put(server, new LinkedList<>());
         }
         serverToSegments.get(server).add(segment);
       }
@@ -523,7 +659,7 @@ public class ReplicaGroupRebalanceSegmentStrategy implements RebalanceSegmentStr
       String server = entry.getKey();
       for (String segment : entry.getValue()) {
         if (!segmentsToServerMapping.containsKey(segment)) {
-          segmentsToServerMapping.put(segment, new HashMap<String, String>());
+          segmentsToServerMapping.put(segment, new HashMap<>());
         }
         segmentsToServerMapping.get(segment)
             .put(server, CommonConstants.Helix.StateModel.SegmentOnlineOfflineStateModel.ONLINE);
