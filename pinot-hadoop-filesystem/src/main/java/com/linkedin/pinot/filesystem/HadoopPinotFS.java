@@ -169,6 +169,15 @@ public class HadoopPinotFS extends PinotFS {
     return fileStatus.isDirectory();
   }
 
+  @Override
+  public long lastModified(URI uri) {
+    try {
+      return _hadoopFS.getFileStatus(new Path(uri)).getModificationTime();
+    } catch (IOException e) {
+      return 0L;
+    }
+  }
+
   private void authenticate(org.apache.hadoop.conf.Configuration hadoopConf, org.apache.commons.configuration.Configuration configs) {
     String principal = configs.getString(PRINCIPAL);
     String keytab = configs.getString(KEYTAB);

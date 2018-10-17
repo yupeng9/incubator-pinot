@@ -118,6 +118,14 @@ public abstract class PinotFS implements Closeable {
   public abstract boolean isDirectory(URI uri) throws IOException;
 
   /**
+   * Returns the age of the file
+   * @param uri
+   * @return A long value representing the time the file was last modified, measured in milliseconds since epoch
+   * (00:00:00 GMT, January 1, 1970) or 0L if the file does not exist or if an I/O error occurs
+   */
+  public abstract long lastModified(URI uri);
+
+  /**
    * For certain filesystems, we may need to close the filesystem and do relevant operations to prevent leaks.
    * By default, this method does nothing.
    * @throws IOException

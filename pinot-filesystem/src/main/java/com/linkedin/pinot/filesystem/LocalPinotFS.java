@@ -134,6 +134,11 @@ public class LocalPinotFS extends PinotFS {
     return new File(uri).isDirectory();
   }
 
+  @Override
+  public long lastModified(URI uri) {
+    return new File(uri).lastModified();
+  }
+
   private String encodeURI(String uri) throws UnsupportedEncodingException {
     return URLEncoder.encode(uri, DEFAULT_ENCODING);
   }

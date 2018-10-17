@@ -15,11 +15,21 @@
  */
 package com.linkedin.pinot.controller.helix.core;
 
+import com.linkedin.pinot.common.config.TableNameBuilder;
+import com.linkedin.pinot.common.metadata.ZKMetadataProvider;
+import com.linkedin.pinot.common.utils.CommonConstants;
+import com.linkedin.pinot.common.utils.SegmentName;
+import com.linkedin.pinot.common.utils.StringUtil;
+import com.linkedin.pinot.controller.ControllerConf;
+import com.linkedin.pinot.filesystem.PinotFS;
+import com.linkedin.pinot.filesystem.PinotFSFactory;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,9 +38,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.AgeFileFilter;
-import org.apache.commons.io.filefilter.DirectoryFileFilter;
 import org.apache.helix.AccessOption;
 import org.apache.helix.HelixAdmin;
 import org.apache.helix.ZNRecord;
@@ -40,10 +47,6 @@ import org.apache.helix.store.zk.ZkHelixPropertyStore;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.linkedin.pinot.common.config.TableNameBuilder;
-import com.linkedin.pinot.common.metadata.ZKMetadataProvider;
-import com.linkedin.pinot.common.utils.CommonConstants;
-import com.linkedin.pinot.common.utils.SegmentName;
 
 public class SegmentDeletionManager {
 
@@ -52,14 +55,14 @@ public class SegmentDeletionManager {
   private static final long DEFAULT_DELETION_DELAY_SECONDS = 2L;
 
   private final ScheduledExecutorService _executorService;
-  private final String _localDiskDir;
+  private final String _dataDir;
   private final String _helixClusterName;
   private final HelixAdmin _helixAdmin;
   private final ZkHelixPropertyStore<ZNRecord> _propertyStore;
   private final String DELETED_SEGMENTS = "Deleted_Segments";
 
-  public SegmentDeletionManager(String localDiskDir, HelixAdmin helixAdmin, String helixClusterName, ZkHelixPropertyStore<ZNRecord> propertyStore) {
-    _localDiskDir = localDiskDir;
+  public SegmentDeletionManager(String dataDir, HelixAdmin helixAdmin, String helixClusterName, ZkHelixPropertyStore<ZNRecord> propertyStore) {
+    _dataDir = dataDir;
     _helixAdmin = helixAdmin;
     _helixClusterName = helixClusterName;
     _propertyStore = propertyStore;
@@ -168,37 +171,51 @@ public class SegmentDeletionManager {
 
   protected void removeSegmentFromStore(String tableNameWithType, String segmentId) {
     final String rawTableName = TableNameBuilder.extractRawTableName(tableNameWithType);
-    if (_localDiskDir != null) {
-      File fileToMove = new File(new File(_localDiskDir, rawTableName), segmentId);
-      if (fileToMove.exists()) {
-        File targetDir = new File(new File(_localDiskDir, DELETED_SEGMENTS), rawTableName);
-        try {
-          // Overwrites the file if it already exists in the target directory.
-          FileUtils.copyFileToDirectory(fileToMove, targetDir, false);
-          LOGGER.info("Moved segment {} from {} to {}", segmentId, fileToMove.getAbsolutePath(), targetDir.getAbsolutePath());
-          if (!fileToMove.delete()) {
-            LOGGER.warn("Could not delete file", segmentId, fileToMove.getAbsolutePath());
-          }
-        } catch (IOException e) {
-          LOGGER.warn("Could not move segment {} from {} to {}", segmentId, fileToMove.getAbsolutePath(), targetDir.getAbsolutePath(), e);
-        }
-      } else {
-        CommonConstants.Helix.TableType tableType = TableNameBuilder.getTableTypeFromTableName(tableNameWithType);
-        switch (tableType) {
-          case OFFLINE:
-            LOGGER.warn("Not found local segment file for segment {}" + fileToMove.getAbsolutePath());
-            break;
-          case REALTIME:
-            if (SegmentName.isLowLevelConsumerSegmentName(segmentId)) {
-              LOGGER.warn("Not found local segment file for segment {}" + fileToMove.getAbsolutePath());
-            }
-            break;
-          default:
-            LOGGER.warn("Unsupported table type {} when deleting segment {}", tableType, segmentId);
-        }
+    if (_dataDir != null) {
+      URI deletedSegmentDirURI;
+      URI fileToMoveURI;
+      PinotFS pinotFS;
+      try {
+        URI dataDirURI = ControllerConf.getUriFromPath(_dataDir);
+        fileToMoveURI = ControllerConf.constructSegmentLocation(dataDirURI.toString(), rawTableName, segmentId);
+        pinotFS = PinotFSFactory.create(fileToMoveURI.getScheme());
+        deletedSegmentDirURI = ControllerConf.getUriFromPath(StringUtil.join("/", _dataDir, DELETED_SEGMENTS, rawTableName));
+      } catch (URISyntaxException e) {
+        LOGGER.error("Could not create DELETED_SEGMENTS uri with dataDir {}, tableName {}", _dataDir, rawTableName);
+        throw new RuntimeException(e);
       }
+
+      try {
+        if (pinotFS.exists(fileToMoveURI)) {
+          // Overwrites the file if it already exists in the target directory.
+          pinotFS.move(fileToMoveURI, deletedSegmentDirURI);
+          LOGGER.info("Moved segment {} from {} to {}", segmentId, fileToMoveURI.toString(), deletedSegmentDirURI.toString());
+          if (!pinotFS.delete(fileToMoveURI)) {
+            LOGGER.warn("Could not delete file", segmentId, fileToMoveURI.toString());
+          }
+        } else {
+          CommonConstants.Helix.TableType tableType = TableNameBuilder.getTableTypeFromTableName(tableNameWithType);
+          switch (tableType) {
+            case OFFLINE:
+              LOGGER.warn("Not found segment file for segment {}" + fileToMoveURI.toString());
+              break;
+            case REALTIME:
+              if (SegmentName.isLowLevelConsumerSegmentName(segmentId)) {
+                LOGGER.warn("Not found segment file for segment {}" + fileToMoveURI.toString());
+              }
+              break;
+            default:
+              LOGGER.warn("Unsupported table type {} when deleting segment {}", tableType, segmentId);
+          }
+        }
+
+      } catch (IOException e) {
+        LOGGER.warn("Could not move segment {} from {} to {}", segmentId, fileToMoveURI.toString(),
+            deletedSegmentDirURI.toString(), e);
+      }
+
     } else {
-      LOGGER.info("localDiskDir is not configured, won't delete segment {} from disk", segmentId);
+      LOGGER.info("dataDir is not configured, won't delete segment {} from disk", segmentId);
     }
   }
 
@@ -207,37 +224,68 @@ public class SegmentDeletionManager {
    * @param retentionInDays: retention for deleted segments in days
    */
   public void removeAgedDeletedSegments(int retentionInDays) {
-    if (_localDiskDir != null) {
-      File deletedDir = new File(_localDiskDir, DELETED_SEGMENTS);
-      // Check that the directory for deleted segments exists
-      if (!deletedDir.isDirectory()) {
-        LOGGER.warn("Deleted segment directory {} does not exist or it is not directory.", deletedDir.getAbsolutePath());
-        return;
+    if (_dataDir != null) {
+      URI deletedDirURI;
+      PinotFS pinotFS;
+      String[] deletedDirFiles = null;
+
+      try {
+        URI dataDirURI = ControllerConf.getUriFromPath(_dataDir);
+        deletedDirURI = ControllerConf.getUriFromPath(StringUtil.join(File.separator, _dataDir, DELETED_SEGMENTS));
+        pinotFS = PinotFSFactory.create(dataDirURI.getScheme());
+
+        // Check that the directory for deleted segments exists
+        if (!pinotFS.isDirectory(deletedDirURI)) {
+          LOGGER.warn("Deleted segment directory {} does not exist or it is not directory.", deletedDirURI.toString());
+          return;
+        }
+      } catch (URISyntaxException | IOException e) {
+        LOGGER.error("Could not create DELETED_SEGMENTS uri with dataDir {}", _dataDir);
+        throw new RuntimeException(e);
       }
 
-      AgeFileFilter fileFilter = new AgeFileFilter(DateTime.now().minusDays(retentionInDays).toDate());
-      File[] directories = deletedDir.listFiles((FileFilter) DirectoryFileFilter.DIRECTORY);
-      // Check that the directory for deleted segments is empty
-      if (directories == null) {
-        LOGGER.warn("Deleted segment directory {} does not exist or it caused an I/O error.", deletedDir);
-        return;
-      }
+      try {
+        deletedDirFiles = pinotFS.listFiles(deletedDirURI);
+        if (deletedDirFiles == null) {
+          LOGGER.warn("Deleted segment directory {} does not exist or it caused an I/O error.", deletedDirURI.toString());
+          return;
+        }
+        ArrayList<URI> deletedDirDirectories = new ArrayList<>();
+        for (String dir : deletedDirFiles) {
+          URI dirURI = new URI(dir);
+          if (pinotFS.isDirectory(dirURI)) {
+            deletedDirDirectories.add(dirURI);
+          }
+        }
 
-      for (File currentDir : directories) {
-        // Get files that are aged
-        Collection<File> targetFiles = FileUtils.listFiles(currentDir, fileFilter, null);
-        // Delete aged files
-        for (File f : targetFiles) {
-          if (!f.delete()) {
-            LOGGER.warn("Cannot remove file {} from deleted directory.", f.getAbsolutePath());
+        for (URI currentDir : deletedDirDirectories) {
+          // Get files that are aged
+          String[] targetFiles = pinotFS.listFiles(currentDir);
+          List<URI> filesToDelete = new ArrayList<>();
+          for (String targetFile : targetFiles) {
+            URI targetURI = new URI(targetFile);
+            Date dateToDelete = DateTime.now().minusDays(retentionInDays).toDate();
+            if (pinotFS.lastModified(targetURI) < dateToDelete.getTime()) {
+              filesToDelete.add(targetURI);
+            }
+          }
+
+          // Delete aged files
+          for (URI f : filesToDelete) {
+            if (!pinotFS.delete(f)) {
+              LOGGER.warn("Cannot remove file {} from deleted directory.", f.toString());
+            }
+          }
+          // Delete directory if it's empty
+          String[] fileList = pinotFS.listFiles(currentDir);
+          if (fileList != null && fileList.length == 0) {
+            if (!pinotFS.delete(currentDir)) {
+              LOGGER.warn("The directory {} cannot be removed. The directory may not be empty.", currentDir.toString());
+            }
           }
         }
-        // Delete directory if it's empty
-        if (currentDir.list() != null && currentDir.list().length == 0) {
-          if (!currentDir.delete()) {
-            LOGGER.warn("The directory {} cannot be removed. The directory may not be empty.", currentDir.getAbsolutePath());
-          }
-        }
+      } catch (URISyntaxException | IOException e){
+        LOGGER.error("Had trouble deleting directories", deletedDirURI.toString());
       }
     } else {
       LOGGER.info("localDiskDir is not configured, won't delete any expired segments from deleted directory.");
