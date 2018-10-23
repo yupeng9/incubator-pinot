@@ -177,9 +177,9 @@ public class SegmentDeletionManager {
       PinotFS pinotFS;
       try {
         URI dataDirURI = ControllerConf.getUriFromPath(_dataDir);
-        fileToMoveURI = ControllerConf.constructSegmentLocation(dataDirURI.toString(), rawTableName, segmentId);
-        pinotFS = PinotFSFactory.create(fileToMoveURI.getScheme());
-        deletedSegmentDirURI = ControllerConf.getUriFromPath(StringUtil.join("/", _dataDir, DELETED_SEGMENTS, rawTableName));
+        fileToMoveURI = ControllerConf.constructSegmentLocation(_dataDir, rawTableName, segmentId);
+        pinotFS = PinotFSFactory.create(dataDirURI.getScheme());
+        deletedSegmentDirURI = ControllerConf.getUriFromPath(StringUtil.join(File.separator, _dataDir, DELETED_SEGMENTS, rawTableName));
       } catch (URISyntaxException e) {
         LOGGER.error("Could not create DELETED_SEGMENTS uri with dataDir {}, tableName {}", _dataDir, rawTableName);
         throw new RuntimeException(e);
@@ -278,7 +278,7 @@ public class SegmentDeletionManager {
           }
           // Delete directory if it's empty
           String[] fileList = pinotFS.listFiles(currentDir);
-          if (fileList != null && fileList.length == 0) {
+          if (new File(currentDir.getRawPath()) != null && fileList.length == 0) {
             if (!pinotFS.delete(currentDir)) {
               LOGGER.warn("The directory {} cannot be removed. The directory may not be empty.", currentDir.toString());
             }

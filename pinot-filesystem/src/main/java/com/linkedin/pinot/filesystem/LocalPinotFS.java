@@ -25,6 +25,8 @@ import java.nio.file.Files;
 import java.util.Collection;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.DirectoryFileFilter;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +117,8 @@ public class LocalPinotFS extends PinotFS {
   @Override
   public String[] listFiles(URI fileUri) throws IOException {
     File file = new File(decodeURI(fileUri.getRawPath()));
-    Collection<File> files = FileUtils.listFiles(file, null, true);
+    Collection<File> files = FileUtils.listFilesAndDirs(file, TrueFileFilter.INSTANCE, DirectoryFileFilter.INSTANCE);
+//    Collection<File> files = FileUtils.listFiles(file, null, true);
     return files.stream().map(File::getPath).toArray(String[]::new);
   }
 
@@ -131,12 +134,14 @@ public class LocalPinotFS extends PinotFS {
 
   @Override
   public boolean isDirectory(URI uri) throws IOException {
-    return new File(uri).isDirectory();
+    File file = new File(decodeURI(uri.getRawPath()));
+    return file.isDirectory();
   }
 
   @Override
-  public long lastModified(URI uri) {
-    return new File(uri).lastModified();
+  public long lastModified(URI uri) throws IOException {
+    File file = new File(decodeURI(uri.getRawPath()));
+    return file.lastModified();
   }
 
   private String encodeURI(String uri) throws UnsupportedEncodingException {

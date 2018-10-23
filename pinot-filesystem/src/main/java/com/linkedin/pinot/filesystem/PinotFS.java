@@ -123,7 +123,7 @@ public abstract class PinotFS implements Closeable {
    * @return A long value representing the time the file was last modified, measured in milliseconds since epoch
    * (00:00:00 GMT, January 1, 1970) or 0L if the file does not exist or if an I/O error occurs
    */
-  public abstract long lastModified(URI uri);
+  public abstract long lastModified(URI uri) throws IOException;
 
   /**
    * For certain filesystems, we may need to close the filesystem and do relevant operations to prevent leaks.

@@ -118,7 +118,7 @@ public class PinotFSFactoryTest {
     }
 
     @Override
-    public long lastModified(URI uri) {
+    public long lastModified(URI uri) throws IOException {
       return 0L;
     }
   }

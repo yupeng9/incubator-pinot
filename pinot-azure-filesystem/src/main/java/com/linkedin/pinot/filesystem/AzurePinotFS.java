@@ -199,7 +199,7 @@ public class AzurePinotFS extends PinotFS {
   }
 
   @Override
-  public long lastModified(URI uri) {
+  public long lastModified(URI uri) throws IOException {
     try {
       return _adlStoreClient.getDirectoryEntry(uri.getPath()).lastModifiedTime.getTime();
     } catch (IOException e) {

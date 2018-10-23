@@ -170,7 +170,7 @@ public class HadoopPinotFS extends PinotFS {
   }
 
   @Override
-  public long lastModified(URI uri) {
+  public long lastModified(URI uri) throws IOException {
     try {
       return _hadoopFS.getFileStatus(new Path(uri)).getModificationTime();
     } catch (IOException e) {
