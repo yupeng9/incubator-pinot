@@ -78,7 +78,7 @@ public class ZKOperator {
         enableParallelPushProtection, headers, zkDownloadURI, offlineTableName, segmentName, znRecord, moveSegmentToFinalLocation);
   }
 
-  private void processExistingSegment(SegmentMetadata segmentMetadata, URI finalSegmentLocationURI,
+  public void processExistingSegment(SegmentMetadata segmentMetadata, URI finalSegmentLocationURI,
       File currentSegmentLocation, boolean enableParallelPushProtection, HttpHeaders headers, String zkDownloadURI,
       String offlineTableName, String segmentName, ZNRecord znRecord, boolean moveSegmentToFinalLocation) throws Exception {
 
@@ -194,7 +194,7 @@ public class ZKOperator {
     }
   }
 
-  private void processNewSegment(SegmentMetadata segmentMetadata, URI finalSegmentLocationURI,
+  public void processNewSegment(SegmentMetadata segmentMetadata, URI finalSegmentLocationURI,
       File currentSegmentLocation, String zkDownloadURI, String crypter, String rawTableName, String segmentName,
       boolean moveSegmentToFinalLocation) {
     // For v1 segment uploads, we will not move the segment
