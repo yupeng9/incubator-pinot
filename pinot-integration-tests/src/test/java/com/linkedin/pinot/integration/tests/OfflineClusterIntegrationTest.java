@@ -50,10 +50,10 @@ public class OfflineClusterIntegrationTest extends BaseClusterIntegrationTestSet
   private static final int NUM_SEGMENTS = 12;
 
   // For inverted index triggering test
-  private static final List<String> UPDATED_INVERTED_INDEX_COLUMNS =
-      Arrays.asList("FlightNum", "Origin", "Quarter", "DivActualElapsedTime");
   private static final String TEST_UPDATED_INVERTED_INDEX_QUERY =
       "SELECT COUNT(*) FROM mytable WHERE DivActualElapsedTime = 305";
+  private static final List<String> UPDATED_INVERTED_INDEX_COLUMNS =
+      Arrays.asList("FlightNum", "Origin", "Quarter", "DivActualElapsedTime");
 
   private static final List<String> UPDATED_BLOOM_FLITER_COLUMNS = Arrays.asList("Carrier");
   private static final String TEST_UPDATED_BLOOM_FILTER_QUERY = "SELECT COUNT(*) FROM mytable WHERE Carrier = 'CA'";
@@ -200,7 +200,7 @@ public class OfflineClusterIntegrationTest extends BaseClusterIntegrationTestSet
           throw new RuntimeException(e);
         }
       }
-    }, 600_000L, "Failed to generate inverted index");
+    }, 600_000L, "Failed to generate bloomfilter");
   }
 
   /**
