@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.linkedin.pinot.core.segment.creator;
+package com.linkedin.pinot.core.segment.creator.impl.textsearch;
 
-import java.io.Closeable;
-import java.io.IOException;
+import com.linkedin.pinot.core.segment.creator.DocBasedInvertedIndexCreator;
 
-public interface InvertedIndexCreator extends Closeable {
-  /**
-   * Seals the index and flushes it to disk.
-   */
-  void seal() throws IOException;
+
+public class TextSearchIndexCreatorFactory {
+
+   public static DocBasedInvertedIndexCreator createSearchIndexer(TextSearchIndexConfig config) {
+
+     switch (config.getType()) {
+       case LUCENE:
+         return new LuceneIndexCreator(config);
+       default:
+         throw new IllegalArgumentException("Unsupported TextSearchIndexType " + config.getType());
+     }
+   }
 }

@@ -50,6 +50,7 @@ public class FieldSpecTest {
     Assert.assertEquals(BOOLEAN.getStoredType(), STRING);
     Assert.assertEquals(STRING.getStoredType(), STRING);
     Assert.assertEquals(BYTES.getStoredType(), BYTES);
+    Assert.assertEquals(TEXT.getStoredType(), TEXT);
 
     Assert.assertEquals(INT.size(), Integer.BYTES);
     Assert.assertEquals(LONG.size(), Long.BYTES);
@@ -287,6 +288,14 @@ public class FieldSpecTest {
     DimensionFieldSpec dimensionFieldSpec2 = new DimensionFieldSpec("dimension", BOOLEAN, true, false);
     Assert.assertEquals(dimensionFieldSpec1, dimensionFieldSpec2, ERROR_MESSAGE);
     Assert.assertEquals(dimensionFieldSpec1.getDefaultNullValue(), "false", ERROR_MESSAGE);
+
+    // Single-value Text type dimension field with default null value.
+    String[] dimensionFields2 = {"\"name\":\"dimension\"", "\"dataType\":\"TEXT\"", "\"defaultNullValue\":false"};
+    DimensionFieldSpec dimensionFieldSpec3 =
+        MAPPER.readValue(getRandomOrderJsonString(dimensionFields2), DimensionFieldSpec.class);
+    DimensionFieldSpec dimensionFieldSpec4 = new DimensionFieldSpec("dimension", TEXT, true, false);
+    Assert.assertEquals(dimensionFieldSpec3, dimensionFieldSpec4, ERROR_MESSAGE);
+    Assert.assertEquals(dimensionFieldSpec3.getDefaultNullValue(), "false", ERROR_MESSAGE);
 
     // Multi-value dimension field with default null value.
     dimensionFields =

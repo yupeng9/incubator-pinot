@@ -117,6 +117,7 @@ public class PinotSegmentColumnReader {
       case DOUBLE:
         return readDouble(docId);
       case STRING:
+      case TEXT:
         return readString(docId);
       case BYTES:
         return readBytes(docId);

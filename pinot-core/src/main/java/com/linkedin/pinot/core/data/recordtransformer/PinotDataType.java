@@ -258,6 +258,33 @@ public enum PinotDataType {
     }
   },
 
+  TEXT {
+    @Override
+    public Integer toInteger(Object value) {
+      return Integer.parseInt((String) value);
+    }
+
+    @Override
+    public Long toLong(Object value) {
+      return Long.parseLong((String) value);
+    }
+
+    @Override
+    public Float toFloat(Object value) {
+      return Float.parseFloat((String) value);
+    }
+
+    @Override
+    public Double toDouble(Object value) {
+      return Double.parseDouble((String) value);
+    }
+
+    @Override
+    public String convert(Object value, PinotDataType sourceType) {
+      return sourceType.toString(value);
+    }
+  },
+
   OBJECT {
     @Override
     public Integer toInteger(Object value) {
@@ -428,7 +455,7 @@ public enum PinotDataType {
   }
 
   public Object convert(Object value, PinotDataType sourceType) {
-    throw new UnsupportedOperationException("Cannot convert value: " + value + " form: " + sourceType + " to: " + this);
+    throw new UnsupportedOperationException("Cannot convert value: " + value + " from: " + sourceType + " to: " + this);
   }
 
   public boolean isSingleValue() {
@@ -473,6 +500,12 @@ public enum PinotDataType {
         return fieldSpec.isSingleValueField() ? PinotDataType.DOUBLE : PinotDataType.DOUBLE_ARRAY;
       case STRING:
         return fieldSpec.isSingleValueField() ? PinotDataType.STRING : PinotDataType.STRING_ARRAY;
+      case TEXT:
+        if (fieldSpec.isSingleValueField()) {
+          return PinotDataType.TEXT;
+        } else {
+          throw new UnsupportedOperationException("Unsupported multi-valued type: TEXT");
+        }
       case BYTES:
         if (fieldSpec.isSingleValueField()) {
           return PinotDataType.BYTES;

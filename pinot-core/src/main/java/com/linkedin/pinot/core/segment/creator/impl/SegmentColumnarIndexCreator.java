@@ -28,6 +28,8 @@ import com.linkedin.pinot.core.indexsegment.generator.SegmentGeneratorConfig;
 import com.linkedin.pinot.core.io.compression.ChunkCompressorFactory;
 import com.linkedin.pinot.core.io.util.PinotDataBitSet;
 import com.linkedin.pinot.core.segment.creator.ColumnIndexCreationInfo;
+import com.linkedin.pinot.core.segment.creator.DictionaryBasedInvertedIndexCreator;
+import com.linkedin.pinot.core.segment.creator.DocBasedInvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.ForwardIndexCreator;
 import com.linkedin.pinot.core.segment.creator.InvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.MultiValueForwardIndexCreator;
@@ -42,6 +44,8 @@ import com.linkedin.pinot.core.segment.creator.impl.fwd.SingleValueUnsortedForwa
 import com.linkedin.pinot.core.segment.creator.impl.fwd.SingleValueVarByteRawIndexCreator;
 import com.linkedin.pinot.core.segment.creator.impl.inv.OffHeapBitmapInvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.impl.inv.OnHeapBitmapInvertedIndexCreator;
+import com.linkedin.pinot.core.segment.creator.impl.textsearch.TextSearchIndexConfig;
+import com.linkedin.pinot.core.segment.creator.impl.textsearch.TextSearchIndexCreatorFactory;
 import com.linkedin.pinot.startree.hll.HllConfig;
 import java.io.File;
 import java.io.IOException;
@@ -75,7 +79,8 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
   private Map<String, ColumnIndexCreationInfo> indexCreationInfoMap;
   private Map<String, SegmentDictionaryCreator> _dictionaryCreatorMap = new HashMap<>();
   private Map<String, ForwardIndexCreator> _forwardIndexCreatorMap = new HashMap<>();
-  private Map<String, InvertedIndexCreator> _invertedIndexCreatorMap = new HashMap<>();
+  private Map<String, DictionaryBasedInvertedIndexCreator> _invertedIndexCreatorMap = new HashMap<>();
+  private Map<String, DocBasedInvertedIndexCreator> _docBasedInvertedIndexCreatorMap = new HashMap<>();
   private String segmentName;
   private Schema schema;
   private File _indexDir;
@@ -172,16 +177,34 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
         // TODO: add support to multi-value column and inverted index
         Preconditions.checkState(fieldSpec.isSingleValueField(), "Cannot create raw index for multi-value column: %s",
             columnName);
-        Preconditions.checkState(!invertedIndexColumns.contains(columnName),
+
+        boolean createInvertedIndex = invertedIndexColumns.contains(columnName);
+        FieldSpec.DataType type = fieldSpec.getDataType();
+        // TEXT columns can have inverted indices
+        Preconditions.checkState(type == FieldSpec.DataType.TEXT ||
+                !createInvertedIndex,
             "Cannot create inverted index for raw index column: %s", columnName);
 
         ChunkCompressorFactory.CompressionType compressionType =
             getColumnCompressionType(segmentCreationSpec, fieldSpec);
 
-        // Initialize forward index creator
-        _forwardIndexCreatorMap.put(columnName,
-            getRawIndexCreatorForColumn(_indexDir, compressionType, columnName, fieldSpec.getDataType(), totalDocs,
-                indexCreationInfo.getLengthOfLongestEntry()));
+        boolean createFwdIndex = true;
+        if(createInvertedIndex && type == FieldSpec.DataType.TEXT) {
+          TextSearchIndexConfig config = segmentCreationSpec.getTextSearchIndexConfigs().get(columnName);
+          if (config == null) {
+            config = TextSearchIndexConfig.getDefaultConfig(columnName, _indexDir);
+          }
+          createFwdIndex = config.shouldStore();
+          _docBasedInvertedIndexCreatorMap.put(columnName, TextSearchIndexCreatorFactory.createSearchIndexer(config));
+        }
+
+        if (createFwdIndex) {
+          // Initialize forward index creator
+          _forwardIndexCreatorMap.put(columnName,
+              getRawIndexCreatorForColumn(_indexDir, compressionType, columnName, fieldSpec.getDataType(), totalDocs,
+                  indexCreationInfo.getLengthOfLongestEntry()));
+
+        }
       }
     }
   }
@@ -254,23 +277,31 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
         throw new RuntimeException("Null value for column:" + columnName);
       }
 
-      SegmentDictionaryCreator dictionaryCreator = _dictionaryCreatorMap.get(columnName);
-      if (schema.getFieldSpecFor(columnName).isSingleValueField()) {
-        if (dictionaryCreator != null) {
-          int dictId = dictionaryCreator.indexOfSV(columnValueToIndex);
-          ((SingleValueForwardIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter, dictId);
-          if (_invertedIndexCreatorMap.containsKey(columnName)) {
-            _invertedIndexCreatorMap.get(columnName).add(dictId);
+      if (_docBasedInvertedIndexCreatorMap.containsKey(columnName)) {
+        // inverted index
+        _docBasedInvertedIndexCreatorMap.get(columnName).add(columnValueToIndex);
+        // forward index
+        ((SingleValueRawIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter,
+            columnValueToIndex);
+      } else {
+        SegmentDictionaryCreator dictionaryCreator = _dictionaryCreatorMap.get(columnName);
+        if (schema.getFieldSpecFor(columnName).isSingleValueField()) {
+          if (dictionaryCreator != null) {
+            int dictId = dictionaryCreator.indexOfSV(columnValueToIndex);
+            ((SingleValueForwardIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter, dictId);
+            if (_invertedIndexCreatorMap.containsKey(columnName)) {
+              _invertedIndexCreatorMap.get(columnName).add(dictId);
+            }
+          } else {
+            ((SingleValueRawIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter,
+                columnValueToIndex);
           }
         } else {
-          ((SingleValueRawIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter,
-              columnValueToIndex);
-        }
-      } else {
-        int[] dictIds = dictionaryCreator.indexOfMV(columnValueToIndex);
-        ((MultiValueForwardIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter, dictIds);
-        if (_invertedIndexCreatorMap.containsKey(columnName)) {
-          _invertedIndexCreatorMap.get(columnName).add(dictIds, dictIds.length);
+          int[] dictIds = dictionaryCreator.indexOfMV(columnValueToIndex);
+          ((MultiValueForwardIndexCreator) _forwardIndexCreatorMap.get(columnName)).index(docIdCounter, dictIds);
+          if (_invertedIndexCreatorMap.containsKey(columnName)) {
+            _invertedIndexCreatorMap.get(columnName).add(dictIds, dictIds.length);
+          }
         }
       }
     }
@@ -286,6 +317,9 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
   public void seal() throws ConfigurationException, IOException {
     for (InvertedIndexCreator invertedIndexCreator : _invertedIndexCreatorMap.values()) {
       invertedIndexCreator.seal();
+    }
+    for (DocBasedInvertedIndexCreator docIndexCreator : _docBasedInvertedIndexCreatorMap.values()) {
+      docIndexCreator.seal();
     }
     writeMetadata();
   }
@@ -512,6 +546,7 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
 
       case STRING:
       case BYTES:
+      case TEXT:
         indexCreator =
             new SingleValueVarByteRawIndexCreator(file, compressionType, column, totalDocs, lengthOfLongestEntry);
         break;
@@ -533,6 +568,9 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
     }
     for (InvertedIndexCreator invertedIndexCreator : _invertedIndexCreatorMap.values()) {
       invertedIndexCreator.close();
+    }
+    for (DocBasedInvertedIndexCreator docIndexCreator : _docBasedInvertedIndexCreatorMap.values()) {
+      docIndexCreator.close();
     }
   }
 }

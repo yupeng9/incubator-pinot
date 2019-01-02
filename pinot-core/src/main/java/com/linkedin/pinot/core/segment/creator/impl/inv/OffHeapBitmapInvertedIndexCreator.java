@@ -17,6 +17,7 @@ package com.linkedin.pinot.core.segment.creator.impl.inv;
 
 import com.google.common.base.Preconditions;
 import com.linkedin.pinot.common.data.FieldSpec;
+import com.linkedin.pinot.core.segment.creator.DictionaryBasedInvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.InvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.impl.V1Constants;
 import com.linkedin.pinot.core.segment.memory.PinotDataBuffer;
@@ -30,7 +31,7 @@ import org.roaringbitmap.buffer.MutableRoaringBitmap;
 
 
 /**
- * Implementation of {@link InvertedIndexCreator} that uses off-heap memory.
+ * Implementation of {@link DictionaryBasedInvertedIndexCreator} that uses off-heap memory.
  * <p>We use 2 passes to create the inverted index.
  * <ul>
  *   <li>
@@ -48,7 +49,7 @@ import org.roaringbitmap.buffer.MutableRoaringBitmap;
  * </ul>
  * <p>Based on the number of values we need to store, we use direct memory or MMap file to allocate the buffer.
  */
-public final class OffHeapBitmapInvertedIndexCreator implements InvertedIndexCreator {
+public final class OffHeapBitmapInvertedIndexCreator implements DictionaryBasedInvertedIndexCreator {
   // Use MMapBuffer if the buffer size is larger than 100MB
   private static final int NUM_VALUES_THRESHOLD_FOR_MMAP_BUFFER = 25_000_000;
 

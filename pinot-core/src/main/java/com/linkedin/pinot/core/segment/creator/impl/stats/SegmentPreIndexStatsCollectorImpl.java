@@ -51,6 +51,7 @@ public class SegmentPreIndexStatsCollectorImpl implements SegmentPreIndexStatsCo
       switch (spec.getDataType()) {
         case BOOLEAN:
         case STRING:
+        case TEXT:
           columnStatsCollectorMap.put(spec.getName(),
               new StringColumnPreIndexStatsCollector(column, _statsCollectorConfig));
           break;

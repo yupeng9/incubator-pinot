@@ -71,6 +71,7 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
     }
     PinotDataBuffer fwdIndexBuffer = segmentReader.getIndexFor(columnName, ColumnIndexType.FORWARD_INDEX);
 
+    FieldSpec.DataType type = metadata.getDataType();
     if (metadata.hasDictionary()) {
       //bloom filter
       if (loadBloomFilter) {
@@ -110,10 +111,15 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
       }
     } else {
       // Raw index
-      _forwardIndex = loadRawForwardIndex(fwdIndexBuffer, metadata.getDataType());
-      _invertedIndex = null;
+      _forwardIndex = loadRawForwardIndex(fwdIndexBuffer, type);
       _dictionary = null;
       _bloomFilterReader = null;
+      _invertedIndex = null;
+      if (loadInvertedIndex) {
+        if (type == FieldSpec.DataType.TEXT) {
+          // TODO: load text-search inverted index
+        }
+      }
     }
   }
 
@@ -190,6 +196,7 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
         return new FixedByteChunkSingleValueReader(forwardIndexBuffer);
       case STRING:
       case BYTES:
+      case TEXT:
         return new VarByteChunkSingleValueReader(forwardIndexBuffer);
       default:
         throw new IllegalStateException("Illegal data type for raw forward index: " + dataType);

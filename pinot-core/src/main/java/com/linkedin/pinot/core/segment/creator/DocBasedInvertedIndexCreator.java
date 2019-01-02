@@ -15,12 +15,13 @@
  */
 package com.linkedin.pinot.core.segment.creator;
 
-import java.io.Closeable;
-import java.io.IOException;
+/**
+ * A document object based InvertedIndexCreator.
+ */
+public interface DocBasedInvertedIndexCreator extends InvertedIndexCreator {
 
-public interface InvertedIndexCreator extends Closeable {
   /**
-   * Seals the index and flushes it to disk.
+   * Add a document/text field to the index
    */
-  void seal() throws IOException;
+  void add(Object doc);
 }

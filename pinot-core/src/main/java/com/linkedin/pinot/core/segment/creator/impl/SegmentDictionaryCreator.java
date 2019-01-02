@@ -137,6 +137,7 @@ public class SegmentDictionaryCreator implements Closeable {
             _fieldSpec.getName(), numValues, sortedDoubles[0], sortedDoubles[numValues - 1]);
         return;
       case STRING:
+      case TEXT:
         String[] sortedStrings = (String[]) _sortedValues;
         numValues = sortedStrings.length;
         Preconditions.checkState(numValues > 0);
@@ -162,8 +163,9 @@ public class SegmentDictionaryCreator implements Closeable {
           }
         }
         LOGGER.info(
-            "Created dictionary for STRING column: {} with cardinality: {}, max length in bytes: {}, range: {} to {}",
-            _fieldSpec.getName(), numValues, _numBytesPerEntry, sortedStrings[0], sortedStrings[numValues - 1]);
+            "Created dictionary for {} column: {} with cardinality: {}, max length in bytes: {}, range: {} to {}",
+            _fieldSpec.getDataType(),_fieldSpec.getName(), numValues, _numBytesPerEntry, sortedStrings[0],
+            sortedStrings[numValues - 1]);
         return;
 
       case BYTES:

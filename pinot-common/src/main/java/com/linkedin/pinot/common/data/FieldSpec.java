@@ -194,6 +194,7 @@ public abstract class FieldSpec implements Comparable<FieldSpec>, ConfigNodeLife
         case DOUBLE:
           return Double.valueOf(stringDefaultNullValue);
         case STRING:
+        case TEXT:
           return stringDefaultNullValue;
         case BYTES:
           try {
@@ -217,6 +218,7 @@ public abstract class FieldSpec implements Comparable<FieldSpec>, ConfigNodeLife
             case DOUBLE:
               return DEFAULT_METRIC_NULL_VALUE_OF_DOUBLE;
             case STRING:
+            case TEXT:
               return DEFAULT_METRIC_NULL_VALUE_OF_STRING;
             case BYTES:
               return DEFAULT_METRIC_NULL_VALUE_OF_BYTES;
@@ -237,6 +239,7 @@ public abstract class FieldSpec implements Comparable<FieldSpec>, ConfigNodeLife
             case DOUBLE:
               return DEFAULT_DIMENSION_NULL_VALUE_OF_DOUBLE;
             case STRING:
+            case TEXT:
               return DEFAULT_DIMENSION_NULL_VALUE_OF_STRING;
             case BYTES:
               return DEFAULT_DIMENSION_NULL_VALUE_OF_BYTES;
@@ -389,7 +392,8 @@ public abstract class FieldSpec implements Comparable<FieldSpec>, ConfigNodeLife
     DOUBLE,
     BOOLEAN,  // Stored as STRING
     STRING,
-    BYTES;
+    BYTES,
+    TEXT; // Stored as STRING
 
     /**
      * Returns the data type stored in Pinot.

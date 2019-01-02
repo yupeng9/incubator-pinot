@@ -159,6 +159,7 @@ public class AvroUtils {
             fieldAssembler = fieldAssembler.name(fieldSpec.getName()).type().doubleType().noDefault();
             break;
           case STRING:
+          case TEXT:
             fieldAssembler = fieldAssembler.name(fieldSpec.getName()).type().stringType().noDefault();
             break;
           case BYTES:
