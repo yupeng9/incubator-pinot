@@ -41,8 +41,7 @@ public class RegexpLikePredicateAstNode extends PredicateAstNode {
       }
     } else if (childNode instanceof FunctionCallAstNode) {
       throw new Pql2CompilationException("REGEXP_LIKE operator can not be called for a function.");
-    }
-    else {
+    } else {
       super.addChild(childNode);
     }
   }

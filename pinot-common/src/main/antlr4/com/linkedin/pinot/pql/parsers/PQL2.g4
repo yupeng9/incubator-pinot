@@ -74,6 +74,7 @@ predicate:
   | betweenClause                         # BetweenPredicate
   | isClause                              # IsPredicate
   | regexpLikeClause                      # RegexpLikePredicate
+  | textMatchClause                       # TextMatchPredicate
   ;
 
 inClause:
@@ -85,12 +86,14 @@ isClause:
 comparisonClause:
   expression comparisonOperator expression;
 comparisonOperator: '<' | '>' | '<>' | '<=' | '>=' | '=' | '!=';
-
 betweenClause:
   expression BETWEEN expression AND expression;
 
 regexpLikeClause:
   REGEXP_LIKE '(' expression ',' literal ')';
+
+textMatchClause:
+  TEXT_MATCH '(' expression ',' literal ',' literal)';
 
 booleanOperator: OR | AND;
 
@@ -128,6 +131,7 @@ LIMIT: L I M I T;
 NOT : N O T;
 OR: O R;
 REGEXP_LIKE: R E G E X P '_' L I K E;
+TEXT_MATCH: T E X T '_' M A T C H;
 ORDER: O R D E R;
 SELECT: S E L E C T;
 TOP: T O P;

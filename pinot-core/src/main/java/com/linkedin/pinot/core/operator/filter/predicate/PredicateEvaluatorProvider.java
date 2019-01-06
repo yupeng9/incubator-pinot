@@ -18,12 +18,7 @@ package com.linkedin.pinot.core.operator.filter.predicate;
 import com.linkedin.pinot.common.data.FieldSpec.DataType;
 import com.linkedin.pinot.core.common.DataSource;
 import com.linkedin.pinot.core.common.Predicate;
-import com.linkedin.pinot.core.common.predicate.EqPredicate;
-import com.linkedin.pinot.core.common.predicate.InPredicate;
-import com.linkedin.pinot.core.common.predicate.NEqPredicate;
-import com.linkedin.pinot.core.common.predicate.NotInPredicate;
-import com.linkedin.pinot.core.common.predicate.RangePredicate;
-import com.linkedin.pinot.core.common.predicate.RegexpLikePredicate;
+import com.linkedin.pinot.core.common.predicate.*;
 import com.linkedin.pinot.core.query.exception.BadQueryRequestException;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 
@@ -50,6 +45,8 @@ public class PredicateEvaluatorProvider {
           case REGEXP_LIKE:
             return RegexpLikePredicateEvaluatorFactory.newDictionaryBasedEvaluator((RegexpLikePredicate) predicate,
                 dictionary);
+          case TEXT_MATCH:
+            new UnsupportedOperationException("Text Match predicate not supported on dictionary encoded columns");
           default:
             throw new UnsupportedOperationException("Unsupported predicate type: " + predicate.getType());
         }
@@ -69,6 +66,9 @@ public class PredicateEvaluatorProvider {
           case REGEXP_LIKE:
             return RegexpLikePredicateEvaluatorFactory.newRawValueBasedEvaluator((RegexpLikePredicate) predicate,
                 dataType);
+          case TEXT_MATCH:
+            return TextMatchPredicateEvaluatorFactory.newRawValueBasedEvaluator((TextMatchPredicate) predicate,
+                    dataType);
           default:
             throw new UnsupportedOperationException("Unsupported predicate type: " + predicate.getType());
         }
