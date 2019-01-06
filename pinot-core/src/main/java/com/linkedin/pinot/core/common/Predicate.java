@@ -17,12 +17,8 @@ package com.linkedin.pinot.core.common;
 
 import com.linkedin.pinot.common.request.FilterOperator;
 import com.linkedin.pinot.common.utils.request.FilterQueryTree;
-import com.linkedin.pinot.core.common.predicate.EqPredicate;
-import com.linkedin.pinot.core.common.predicate.InPredicate;
-import com.linkedin.pinot.core.common.predicate.NEqPredicate;
-import com.linkedin.pinot.core.common.predicate.NotInPredicate;
-import com.linkedin.pinot.core.common.predicate.RangePredicate;
-import com.linkedin.pinot.core.common.predicate.RegexpLikePredicate;
+import com.linkedin.pinot.core.common.predicate.*;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,7 +31,8 @@ public abstract class Predicate {
     REGEXP_LIKE,
     RANGE,
     IN,
-    NOT_IN;
+    NOT_IN,
+    TEXT_MATCH;
 
     public boolean isExclusive() {
       return this == NEQ || this == NOT_IN;
@@ -95,6 +92,9 @@ public abstract class Predicate {
       break;
     case IN:
       predicate = new InPredicate(column, value);
+      break;
+    case TEXT_MATCH:
+      predicate = new TextMatchPredicate(column, value);
       break;
     default:
       throw new UnsupportedOperationException("Unsupported filterType:" + filterType);

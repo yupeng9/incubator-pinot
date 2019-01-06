@@ -24,7 +24,8 @@ public enum FilterOperator implements org.apache.thrift.TEnum {
   RANGE(4),
   REGEXP_LIKE(5),
   NOT_IN(6),
-  IN(7);
+  IN(7),
+  TEXT_MATCH(8);
 
   private final int value;
 
@@ -61,6 +62,8 @@ public enum FilterOperator implements org.apache.thrift.TEnum {
         return NOT_IN;
       case 7:
         return IN;
+      case 8:
+        return TEXT_MATCH;
       default:
         return null;
     }

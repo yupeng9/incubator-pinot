@@ -15,18 +15,15 @@
  */
 package com.linkedin.pinot.pql.parsers.pql2.ast;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 import com.linkedin.pinot.common.request.FilterOperator;
 import com.linkedin.pinot.common.utils.StringUtil;
 import com.linkedin.pinot.common.utils.request.FilterQueryTree;
 import com.linkedin.pinot.common.utils.request.HavingQueryTree;
 import com.linkedin.pinot.pql.parsers.Pql2CompilationException;
 
-public class RegexpLikePredicateAstNode extends PredicateAstNode {
+import java.util.*;
+
+public class TextMatchPredicateAstNode extends PredicateAstNode {
   private static final String SEPERATOR = "\t\t";
   private String _identifier;
 
@@ -37,10 +34,10 @@ public class RegexpLikePredicateAstNode extends PredicateAstNode {
         IdentifierAstNode node = (IdentifierAstNode) childNode;
         _identifier = node.getName();
       } else {
-        throw new Pql2CompilationException("REGEXP_LIKE predicate has more than one identifier.");
+        throw new Pql2CompilationException("TEXT_MATCH predicate has more than one identifier.");
       }
     } else if (childNode instanceof FunctionCallAstNode) {
-      throw new Pql2CompilationException("REGEXP_LIKE operator can not be called for a function.");
+      throw new Pql2CompilationException("TEXT_MATCH operator can not be called for a function.");
     } else {
       super.addChild(childNode);
     }
@@ -49,10 +46,10 @@ public class RegexpLikePredicateAstNode extends PredicateAstNode {
   @Override
   public FilterQueryTree buildFilterQueryTree() {
     if (_identifier == null) {
-      throw new Pql2CompilationException("REGEXP_LIKE predicate has no identifier");
+      throw new Pql2CompilationException("TEXT_MATCH predicate has no identifier");
     }
 
-    Set<String> values = new HashSet<>();
+    List<String> values = new ArrayList<>();
 
     for (AstNode astNode : getChildren()) {
       if (astNode instanceof LiteralAstNode) {
@@ -61,18 +58,16 @@ public class RegexpLikePredicateAstNode extends PredicateAstNode {
         values.add(expr);
       }
     }
-    if(values.size() > 1) {
-      throw new Pql2CompilationException("Matching more than one regex is NOT supported currently");
+    if(values.size() != 2) {
+      throw new Pql2CompilationException("TEXT_MATCH expects columnName, 'queryString', 'queryOption'");
     }
 
-    String[] valueArray = values.toArray(new String[values.size()]);
-    FilterOperator filterOperator = FilterOperator.REGEXP_LIKE;
-    List<String> value = Collections.singletonList(StringUtil.join(SEPERATOR, valueArray));
-    return new FilterQueryTree(_identifier, value, filterOperator, null);
+    FilterOperator filterOperator = FilterOperator.TEXT_MATCH;
+    return new FilterQueryTree(_identifier, values, filterOperator, null);
   }
 
   @Override
   public HavingQueryTree buildHavingQueryTree() {
-    throw new Pql2CompilationException("REGEXP_LIKE predicate is not supported in HAVING clause.");
+    throw new Pql2CompilationException("TEXT_MATCH predicate is not supported in HAVING clause.");
   }
 }
