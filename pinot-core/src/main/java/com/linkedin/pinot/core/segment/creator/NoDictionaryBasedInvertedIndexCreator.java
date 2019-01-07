@@ -16,12 +16,12 @@
 package com.linkedin.pinot.core.segment.creator;
 
 /**
- * A document object based InvertedIndexCreator.
+ * A No-Dictionary based InvertedIndexCreator.
  */
-public interface DocBasedInvertedIndexCreator extends InvertedIndexCreator {
+public interface NoDictionaryBasedInvertedIndexCreator extends InvertedIndexCreator {
 
   /**
-   * Add a document/text field to the index
+   * Add a document field to the index
    */
   void add(Object doc);
 }

@@ -15,7 +15,7 @@
  */
 package com.linkedin.pinot.core.segment.creator.impl.textsearch;
 
-import com.linkedin.pinot.core.segment.creator.DocBasedInvertedIndexCreator;
+import com.linkedin.pinot.core.segment.creator.NoDictionaryBasedInvertedIndexCreator;
 import java.io.File;
 import java.io.IOException;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-class LuceneIndexCreator implements DocBasedInvertedIndexCreator {
+class LuceneIndexCreator implements NoDictionaryBasedInvertedIndexCreator {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LuceneIndexCreator.class);
 

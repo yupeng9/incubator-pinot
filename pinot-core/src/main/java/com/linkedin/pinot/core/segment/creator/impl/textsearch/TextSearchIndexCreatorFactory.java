@@ -15,12 +15,12 @@
  */
 package com.linkedin.pinot.core.segment.creator.impl.textsearch;
 
-import com.linkedin.pinot.core.segment.creator.DocBasedInvertedIndexCreator;
+import com.linkedin.pinot.core.segment.creator.NoDictionaryBasedInvertedIndexCreator;
 
 
 public class TextSearchIndexCreatorFactory {
 
-   public static DocBasedInvertedIndexCreator createSearchIndexer(TextSearchIndexConfig config) {
+   public static NoDictionaryBasedInvertedIndexCreator createSearchIndexer(TextSearchIndexConfig config) {
 
      switch (config.getType()) {
        case LUCENE:
