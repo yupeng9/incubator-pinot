@@ -126,6 +126,10 @@ public class SegmentCreationJob extends Configured {
 
   }
 
+  public void setInputFormat(Job job) {
+    job.setInputFormatClass(TextInputFormat.class);
+  }
+
   public void run() throws Exception {
     LOGGER.info("Starting {}", getClass().getSimpleName());
 
@@ -194,7 +198,7 @@ public class SegmentCreationJob extends Configured {
       job.getConfiguration().set("mapreduce.job.credentials.binary", System.getenv("HADOOP_TOKEN_FILE_LOCATION"));
     }
 
-    job.setInputFormatClass(TextInputFormat.class);
+    setInputFormat(job);
     job.setOutputFormatClass(TextOutputFormat.class);
 
     job.setMapOutputKeyClass(LongWritable.class);
