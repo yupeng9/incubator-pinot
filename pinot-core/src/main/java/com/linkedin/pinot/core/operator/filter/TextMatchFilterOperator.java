@@ -31,7 +31,7 @@ import java.util.List;
 
 public class TextMatchFilterOperator extends BaseFilterOperator {
   private static final Logger LOGGER = LoggerFactory.getLogger(TextMatchFilterOperator.class);
-  private static final String OPERATOR_NAME = "BitmapBasedFilterOperator";
+  private static final String OPERATOR_NAME = "TextMatchFilterOperator";
 
   private final PredicateEvaluator _predicateEvaluator;
   private final DataSource _dataSource;
