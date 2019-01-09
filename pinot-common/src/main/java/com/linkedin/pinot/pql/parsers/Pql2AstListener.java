@@ -15,37 +15,8 @@
  */
 package com.linkedin.pinot.pql.parsers;
 
-import com.linkedin.pinot.pql.parsers.pql2.ast.AstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.BetweenPredicateAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.BinaryMathOpAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.BooleanOperatorAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.ComparisonPredicateAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.ExpressionParenthesisGroupAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.FloatingPointLiteralAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.FunctionCallAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.GroupByAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.HavingAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.IdentifierAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.InPredicateAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.IntegerLiteralAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.IsPredicateAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.LimitAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.OptionAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.OptionsAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.OrderByAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.OrderByExpressionAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.OutputColumnAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.OutputColumnListAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.PredicateListAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.PredicateParenthesisGroupAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.RegexpLikePredicateAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.SelectAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.StarColumnListAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.StarExpressionAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.StringLiteralAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.TableNameAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.TopAstNode;
-import com.linkedin.pinot.pql.parsers.pql2.ast.WhereAstNode;
+import com.linkedin.pinot.pql.parsers.pql2.ast.*;
+
 import java.util.Stack;
 import org.antlr.v4.runtime.misc.NotNull;
 
@@ -284,6 +255,16 @@ public class Pql2AstListener extends PQL2BaseListener {
 
   @Override
   public void exitRegexpLikePredicate(@NotNull PQL2Parser.RegexpLikePredicateContext ctx) {
+    popNode();
+  }
+
+  @Override
+  public void enterTextMatchPredicate(@NotNull PQL2Parser.TextMatchPredicateContext ctx) {
+    pushNode(new TextMatchPredicateAstNode());
+  }
+
+  @Override
+  public void exitTextMatchPredicate(@NotNull PQL2Parser.TextMatchPredicateContext ctx) {
     popNode();
   }
 

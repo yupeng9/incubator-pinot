@@ -235,4 +235,17 @@ public class Pql2CompilerTest {
     Assert.assertEquals(expressions.size(), 1);
     Assert.assertEquals(expressions.get(0), "sub('foo',bar)");
   }
+  @Test
+  public void testTextMatch() {
+
+    // Allow string literal column in aggregation and group-by query
+    BrokerRequest brokerRequest =
+            COMPILER.compileToBrokerRequest("SELECT foo FROM table where text_match(col, 'title:\"harry\"', '')");
+    System.out.println(brokerRequest.getFilterQuery());
+    System.out.println(brokerRequest.getFilterQuery().getColumn());
+    System.out.println(brokerRequest.getFilterQuery().getValue().size());
+    System.out.println(brokerRequest.getFilterQuery().getValue());
+
+
+  }
 }
