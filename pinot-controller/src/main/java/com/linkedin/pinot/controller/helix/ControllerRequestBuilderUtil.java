@@ -16,14 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.controller.helix;
+package org.apache.pinot.controller.helix;
 
-import com.linkedin.pinot.common.config.TableNameBuilder;
-import com.linkedin.pinot.common.config.TagNameUtils;
-import com.linkedin.pinot.common.config.Tenant;
-import com.linkedin.pinot.common.config.Tenant.TenantBuilder;
-import com.linkedin.pinot.common.utils.CommonConstants;
-import com.linkedin.pinot.common.utils.TenantRole;
+import org.apache.pinot.common.config.TableNameBuilder;
+import org.apache.pinot.common.config.TagNameUtils;
+import org.apache.pinot.common.config.Tenant;
+import org.apache.pinot.common.config.Tenant.TenantBuilder;
+import org.apache.pinot.common.utils.CommonConstants;
+import org.apache.pinot.common.utils.TenantRole;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.helix.HelixManager;
@@ -36,8 +36,8 @@ import org.apache.helix.participant.statemachine.StateModelFactory;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.linkedin.pinot.common.utils.CommonConstants.Helix.UNTAGGED_BROKER_INSTANCE;
-import static com.linkedin.pinot.common.utils.CommonConstants.Helix.UNTAGGED_SERVER_INSTANCE;
+import static org.apache.pinot.common.utils.CommonConstants.Helix.UNTAGGED_BROKER_INSTANCE;
+import static org.apache.pinot.common.utils.CommonConstants.Helix.UNTAGGED_SERVER_INSTANCE;
 
 
 public class ControllerRequestBuilderUtil {
