@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.admin.command;
+package org.apache.pinot.tools.admin.command;
 
-import com.linkedin.pinot.common.utils.CommonConstants.Helix.TableType;
-import com.linkedin.pinot.common.utils.TenantRole;
-import com.linkedin.pinot.tools.QuickstartTableRequest;
+import org.apache.pinot.common.utils.CommonConstants.Helix.TableType;
+import org.apache.pinot.common.utils.TenantRole;
+import org.apache.pinot.tools.QuickstartTableRequest;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

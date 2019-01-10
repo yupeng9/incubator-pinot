@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.admin.command;
+package org.apache.pinot.tools.admin.command;
 
-import com.linkedin.pinot.tools.Command;
+import org.apache.pinot.tools.Command;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -30,8 +30,8 @@ import org.kohsuke.args4j.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.linkedin.pinot.common.utils.NetUtil;
-import com.linkedin.pinot.controller.helix.ControllerRequestURLBuilder;
+import org.apache.pinot.common.utils.NetUtil;
+import org.apache.pinot.controller.helix.ControllerRequestURLBuilder;
 
 
 /**

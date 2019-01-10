@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.data.generator;
+package org.apache.pinot.tools.data.generator;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.linkedin.pinot.common.data.FieldSpec;
-import com.linkedin.pinot.common.data.Schema;
+import org.apache.pinot.common.data.FieldSpec;
+import org.apache.pinot.common.data.Schema;
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;

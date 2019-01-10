@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.query.comparison;
+package org.apache.pinot.tools.query.comparison;
 
-import com.linkedin.pinot.tools.scan.query.GroupByOperator;
-import com.linkedin.pinot.tools.scan.query.QueryResponse;
-import com.linkedin.pinot.tools.scan.query.ScanBasedQueryProcessor;
+import org.apache.pinot.tools.scan.query.GroupByOperator;
+import org.apache.pinot.tools.scan.query.QueryResponse;
+import org.apache.pinot.tools.scan.query.ScanBasedQueryProcessor;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;

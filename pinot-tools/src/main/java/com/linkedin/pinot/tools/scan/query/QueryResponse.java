@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.scan.query;
+package org.apache.pinot.tools.scan.query;
 
-import com.linkedin.pinot.core.query.utils.Pair;
+import org.apache.pinot.core.query.utils.Pair;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;

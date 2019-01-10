@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.perf;
+package org.apache.pinot.tools.perf;
 
-import com.linkedin.pinot.tools.AbstractBaseCommand;
-import com.linkedin.pinot.tools.Command;
+import org.apache.pinot.tools.AbstractBaseCommand;
+import org.apache.pinot.tools.Command;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Collections;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.tools.streams;
+package org.apache.pinot.tools.streams;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,9 +37,9 @@ import kafka.producer.ProducerConfig;
 import org.glassfish.tyrus.client.ClientManager;
 import org.json.JSONObject;
 
-import com.linkedin.pinot.common.data.Schema;
-import com.linkedin.pinot.common.utils.KafkaStarterUtils;
-import com.linkedin.pinot.core.realtime.impl.kafka.KafkaJSONMessageDecoder;
+import org.apache.pinot.common.data.Schema;
+import org.apache.pinot.common.utils.KafkaStarterUtils;
+import org.apache.pinot.core.realtime.impl.kafka.KafkaJSONMessageDecoder;
 
 
 public class MeetupRsvpStream {
