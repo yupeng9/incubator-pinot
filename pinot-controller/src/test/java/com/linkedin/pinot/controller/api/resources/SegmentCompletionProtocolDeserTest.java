@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.controller.api.resources;
+package org.apache.pinot.controller.api.resources;
 
 import com.alibaba.fastjson.JSON;
-import com.linkedin.pinot.common.protocols.SegmentCompletionProtocol;
+import org.apache.pinot.common.protocols.SegmentCompletionProtocol;
 import org.json.JSONException;
 import org.testng.Assert;
 import org.testng.annotations.Test;

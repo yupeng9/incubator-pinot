@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.controller.api.resources;
+package org.apache.pinot.controller.api.resources;
 
-import com.linkedin.pinot.common.utils.CommonConstants;
-import com.linkedin.pinot.controller.helix.ControllerTest;
+import org.apache.pinot.common.utils.CommonConstants;
+import org.apache.pinot.controller.helix.ControllerTest;
 import java.io.IOException;
 import org.json.JSONObject;
 import org.testng.annotations.BeforeClass;
