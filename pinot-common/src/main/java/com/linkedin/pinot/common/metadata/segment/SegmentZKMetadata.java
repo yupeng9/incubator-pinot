@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.metadata.segment;
+package org.apache.pinot.common.metadata.segment;
 
-import com.linkedin.pinot.common.metadata.ZKMetadata;
-import com.linkedin.pinot.common.utils.CommonConstants;
-import com.linkedin.pinot.common.utils.CommonConstants.Segment.SegmentType;
+import org.apache.pinot.common.metadata.ZKMetadata;
+import org.apache.pinot.common.utils.CommonConstants;
+import org.apache.pinot.common.utils.CommonConstants.Segment.SegmentType;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,7 +33,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.linkedin.pinot.common.utils.EqualityUtils.*;
+import static org.apache.pinot.common.utils.EqualityUtils.*;
 
 
 public abstract class SegmentZKMetadata implements ZKMetadata {

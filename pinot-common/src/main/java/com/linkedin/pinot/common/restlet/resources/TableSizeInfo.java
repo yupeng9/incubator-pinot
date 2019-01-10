@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.restlet.resources;
+package org.apache.pinot.common.restlet.resources;
 
 import java.util.ArrayList;
 import java.util.List;

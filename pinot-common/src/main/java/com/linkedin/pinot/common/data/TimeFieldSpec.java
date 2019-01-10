@@ -16,12 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.data;
+package org.apache.pinot.common.data;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.JsonObject;
-import com.linkedin.pinot.common.config.ConfigKey;
-import com.linkedin.pinot.common.utils.EqualityUtils;
+import org.apache.pinot.common.config.ConfigKey;
+import org.apache.pinot.common.utils.EqualityUtils;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import org.codehaus.jackson.annotate.JsonIgnore;

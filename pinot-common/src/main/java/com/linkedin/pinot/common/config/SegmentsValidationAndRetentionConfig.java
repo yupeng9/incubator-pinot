@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.config;
+package org.apache.pinot.common.config;
 
-import com.linkedin.pinot.common.utils.EqualityUtils;
-import com.linkedin.pinot.startree.hll.HllConfig;
+import org.apache.pinot.common.utils.EqualityUtils;
+import org.apache.pinot.startree.hll.HllConfig;
 import java.lang.reflect.Field;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;

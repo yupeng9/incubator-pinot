@@ -16,9 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.config;
+package org.apache.pinot.common.config;
 
-import com.linkedin.pinot.common.utils.EqualityUtils;
+import org.apache.pinot.common.utils.EqualityUtils;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.base.Objects;
-import com.linkedin.pinot.common.utils.TenantRole;
+import org.apache.pinot.common.utils.TenantRole;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Tenant {

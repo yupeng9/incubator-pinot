@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.config;
+package org.apache.pinot.common.config;
 
 import com.google.common.base.Preconditions;
-import com.linkedin.pinot.common.data.StarTreeIndexSpec;
-import com.linkedin.pinot.common.utils.CommonConstants.Helix.TableType;
-import com.linkedin.pinot.common.utils.EqualityUtils;
-import com.linkedin.pinot.startree.hll.HllConfig;
+import org.apache.pinot.common.data.StarTreeIndexSpec;
+import org.apache.pinot.common.utils.CommonConstants.Helix.TableType;
+import org.apache.pinot.common.utils.EqualityUtils;
+import org.apache.pinot.startree.hll.HllConfig;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;

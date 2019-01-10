@@ -16,10 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.metadata.segment;
+package org.apache.pinot.common.metadata.segment;
 
-import com.linkedin.pinot.common.config.ColumnPartitionConfig;
-import com.linkedin.pinot.common.utils.EqualityUtils;
+import org.apache.pinot.common.config.ColumnPartitionConfig;
+import org.apache.pinot.common.utils.EqualityUtils;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nonnull;

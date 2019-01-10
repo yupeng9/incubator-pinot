@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.metadata.segment;
+package org.apache.pinot.common.metadata.segment;
 
 /**
  * Copyright (C) 2014-2018 LinkedIn Corp. (pinot-core@linkedin.com)

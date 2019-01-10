@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.common.protocols;
+package org.apache.pinot.common.protocols;
 
 import java.util.concurrent.TimeUnit;
 import com.alibaba.fastjson.JSONObject;
