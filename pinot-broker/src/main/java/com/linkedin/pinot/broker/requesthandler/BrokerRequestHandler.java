@@ -16,11 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.broker.requesthandler;
+package org.apache.pinot.broker.requesthandler;
 
-import com.linkedin.pinot.broker.api.RequestStatistics;
-import com.linkedin.pinot.broker.api.RequesterIdentity;
-import com.linkedin.pinot.common.response.BrokerResponse;
+import org.apache.pinot.broker.api.RequestStatistics;
+import org.apache.pinot.broker.api.RequesterIdentity;
+import org.apache.pinot.common.response.BrokerResponse;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
 import org.json.JSONObject;

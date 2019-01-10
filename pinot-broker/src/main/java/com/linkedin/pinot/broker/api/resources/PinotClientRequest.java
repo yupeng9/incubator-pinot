@@ -16,13 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.broker.api.resources;
+package org.apache.pinot.broker.api.resources;
 
-import com.linkedin.pinot.broker.api.RequestStatistics;
-import com.linkedin.pinot.broker.requesthandler.BrokerRequestHandler;
-import com.linkedin.pinot.common.metrics.BrokerMeter;
-import com.linkedin.pinot.common.metrics.BrokerMetrics;
-import com.linkedin.pinot.common.response.BrokerResponse;
+import org.apache.pinot.broker.api.RequestStatistics;
+import org.apache.pinot.broker.requesthandler.BrokerRequestHandler;
+import org.apache.pinot.common.metrics.BrokerMeter;
+import org.apache.pinot.common.metrics.BrokerMetrics;
+import org.apache.pinot.common.response.BrokerResponse;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -41,7 +41,7 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.linkedin.pinot.common.utils.CommonConstants.Broker.Request.*;
+import static org.apache.pinot.common.utils.CommonConstants.Broker.Request.*;
 
 
 @Api(tags = "Query")
