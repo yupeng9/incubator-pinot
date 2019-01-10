@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.linkedin.pinot.transport.common;
+package org.apache.pinot.transport.common;
 
 import java.util.AbstractQueue;
 import java.util.Collection;
@@ -29,7 +29,7 @@ import java.util.NoSuchElementException;
  * Taken from R2's LinkedDeque implementation to be used in Pool implementation. The class is copied as the corresponding R2 jar pulls in a lot of unnecessary jars.
  *
  * This class provides the ability to remove an arbitrary interior element (neither head nor tail)
- * from the queue in O(1) time, by invoking #removeNode(com.linkedin.r2.util.LinkedDeque.Node).
+ * from the queue in O(1) time, by invoking #removeNode(org.apache.r2.util.LinkedDeque.Node).
  * No class in the Java Collections framework provides this ability.
  *
  * Adding to and removing from head or tail also run in O(1) time, as expected.
