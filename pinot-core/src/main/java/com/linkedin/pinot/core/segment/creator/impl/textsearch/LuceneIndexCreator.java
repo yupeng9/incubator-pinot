@@ -15,6 +15,7 @@
  */
 package com.linkedin.pinot.core.segment.creator.impl.textsearch;
 
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
 import com.linkedin.pinot.core.segment.creator.NoDictionaryBasedInvertedIndexCreator;
 import java.io.File;
 import java.io.IOException;
@@ -30,28 +31,33 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-class LuceneIndexCreator implements NoDictionaryBasedInvertedIndexCreator {
+public class LuceneIndexCreator implements NoDictionaryBasedInvertedIndexCreator {
+
+  public static final String DEFAULT_FIELD = "TEXT";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(LuceneIndexCreator.class);
 
   public static final String VERSION = "7.6.0";
   // Index file will be flushed after reaching this threshold
   private static final int MAX_BUFFER_SIZE_MB = 500;
-  private static final String DEFAULT_FIELD = "TEXT";
   private static final Field.Store DEFAULT_STORE = Field.Store.NO;
 
   private final TextSearchIndexConfig _config;
+  private final String _columnName;
+  private final File _indexDir;
   private final StandardAnalyzer _analyzer;
   private final IndexWriter _writer;
   private final IndexWriterConfig _indexWriterConfig;
   private final Directory _indexDirectory;
 
-  public LuceneIndexCreator(TextSearchIndexConfig config) {
+  public LuceneIndexCreator(TextSearchIndexConfig config, String columnName, File indexDir) {
     _config = config;
+    _columnName = columnName;
+    _indexDir = indexDir;
     _analyzer = new StandardAnalyzer();
     _indexWriterConfig = new IndexWriterConfig(_analyzer);
     _indexWriterConfig.setRAMBufferSizeMB(MAX_BUFFER_SIZE_MB);
-    File dir = new File(config.getIndexDir().getPath() + "/" + _config.getColumnName());
+    File dir = new File(_indexDir.getPath() + "/" + _columnName);
     try {
       _indexDirectory = FSDirectory.open(dir.toPath());
       _writer = new IndexWriter(_indexDirectory, _indexWriterConfig);
@@ -76,6 +82,12 @@ class LuceneIndexCreator implements NoDictionaryBasedInvertedIndexCreator {
       LOGGER.error("Encountered exception while adding doc:{}", doc.toString(), e);
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public boolean indexExists(String column) {
+    // todo: add appropriate functionality
+    return true;
   }
 
   @Override

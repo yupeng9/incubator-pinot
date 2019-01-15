@@ -15,6 +15,7 @@
  */
 package com.linkedin.pinot.core.segment.index.column;
 
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
 import com.linkedin.pinot.common.data.FieldSpec;
 import com.linkedin.pinot.core.io.reader.DataFileReader;
 import com.linkedin.pinot.core.io.reader.SingleColumnSingleValueReader;
@@ -35,15 +36,18 @@ import com.linkedin.pinot.core.segment.index.readers.ImmutableDictionaryReader;
 import com.linkedin.pinot.core.segment.index.readers.IntDictionary;
 import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
 import com.linkedin.pinot.core.segment.index.readers.LongDictionary;
+import com.linkedin.pinot.core.segment.index.readers.LuceneSearchIndexReader;
 import com.linkedin.pinot.core.segment.index.readers.OnHeapDoubleDictionary;
 import com.linkedin.pinot.core.segment.index.readers.OnHeapFloatDictionary;
 import com.linkedin.pinot.core.segment.index.readers.OnHeapIntDictionary;
 import com.linkedin.pinot.core.segment.index.readers.OnHeapLongDictionary;
 import com.linkedin.pinot.core.segment.index.readers.OnHeapStringDictionary;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
 import com.linkedin.pinot.core.segment.index.readers.StringDictionary;
 import com.linkedin.pinot.core.segment.memory.PinotDataBuffer;
 import com.linkedin.pinot.core.segment.store.ColumnIndexType;
 import com.linkedin.pinot.core.segment.store.SegmentDirectory;
+import java.io.File;
 import java.io.IOException;
 
 import org.slf4j.Logger;
@@ -55,11 +59,12 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
 
   private final DataFileReader _forwardIndex;
   private final InvertedIndexReader _invertedIndex;
+  private final SearchIndexReader _searchIndex;
   private final ImmutableDictionaryReader _dictionary;
   private final BloomFilterReader _bloomFilterReader;
 
-  public PhysicalColumnIndexContainer(SegmentDirectory.Reader segmentReader, ColumnMetadata metadata,
-      IndexLoadingConfig indexLoadingConfig) throws IOException {
+  public PhysicalColumnIndexContainer(SegmentDirectory.Reader segmentReader, File indexDir,
+      ColumnMetadata metadata, IndexLoadingConfig indexLoadingConfig) throws IOException {
     String columnName = metadata.getColumnName();
     boolean loadInvertedIndex = false;
     boolean loadOnHeapDictionary = false;
@@ -73,6 +78,7 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
 
     FieldSpec.DataType type = metadata.getDataType();
     if (metadata.hasDictionary()) {
+      _searchIndex = null;
       //bloom filter
       if (loadBloomFilter) {
         PinotDataBuffer bloomFilterBuffer = segmentReader.getIndexFor(columnName, ColumnIndexType.BLOOM_FILTER);
@@ -117,8 +123,22 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
       _invertedIndex = null;
       if (loadInvertedIndex) {
         if (type == FieldSpec.DataType.TEXT) {
-          // TODO: load text-search inverted index
+          TextSearchIndexConfig searchConfig = indexLoadingConfig.getTextSearchIndexConfig();
+          if (searchConfig == null) {
+            searchConfig = TextSearchIndexConfig.getDefaultConfig();
+          }
+          switch (searchConfig.getType()) {
+            case "LUCENE":
+              _searchIndex = new LuceneSearchIndexReader(columnName, indexDir);
+              break;
+            default:
+              throw new RuntimeException("Unsupported Text search index type " + searchConfig.getType());
+          }
+        } else {
+          _searchIndex = null;
         }
+      } else {
+        _searchIndex = null;
       }
     }
   }
@@ -131,6 +151,11 @@ public final class PhysicalColumnIndexContainer implements ColumnIndexContainer 
   @Override
   public InvertedIndexReader getInvertedIndex() {
     return _invertedIndex;
+  }
+
+  @Override
+  public SearchIndexReader getSearchIndex() {
+    return _searchIndex;
   }
 
   @Override

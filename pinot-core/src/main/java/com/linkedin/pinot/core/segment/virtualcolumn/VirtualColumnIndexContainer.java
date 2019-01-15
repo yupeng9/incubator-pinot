@@ -21,6 +21,7 @@ import com.linkedin.pinot.core.segment.index.column.PhysicalColumnIndexContainer
 import com.linkedin.pinot.core.segment.index.readers.BloomFilterReader;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
 
 
 /**
@@ -46,6 +47,11 @@ public class VirtualColumnIndexContainer implements ColumnIndexContainer {
   @Override
   public InvertedIndexReader getInvertedIndex() {
     return _invertedIndex;
+  }
+
+  @Override
+  public SearchIndexReader getSearchIndex() {
+    return null;
   }
 
   @Override

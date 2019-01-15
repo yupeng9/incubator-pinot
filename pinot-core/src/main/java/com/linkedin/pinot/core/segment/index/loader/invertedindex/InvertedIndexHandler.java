@@ -15,13 +15,17 @@
  */
 package com.linkedin.pinot.core.segment.index.loader.invertedindex;
 
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
+import com.linkedin.pinot.common.data.FieldSpec;
 import com.linkedin.pinot.core.indexsegment.generator.SegmentVersion;
 import com.linkedin.pinot.core.io.reader.DataFileReader;
 import com.linkedin.pinot.core.io.reader.SingleColumnMultiValueReader;
 import com.linkedin.pinot.core.io.reader.impl.v1.FixedBitMultiValueReader;
 import com.linkedin.pinot.core.io.reader.impl.v1.FixedBitSingleValueReader;
+import com.linkedin.pinot.core.segment.creator.NoDictionaryBasedInvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.impl.V1Constants;
 import com.linkedin.pinot.core.segment.creator.impl.inv.OffHeapBitmapInvertedIndexCreator;
+import com.linkedin.pinot.core.segment.creator.impl.textsearch.TextSearchIndexCreatorFactory;
 import com.linkedin.pinot.core.segment.index.ColumnMetadata;
 import com.linkedin.pinot.core.segment.index.SegmentMetadataImpl;
 import com.linkedin.pinot.core.segment.index.loader.IndexLoadingConfig;
@@ -43,6 +47,7 @@ public class InvertedIndexHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(InvertedIndexHandler.class);
 
   private final File _indexDir;
+  private final IndexLoadingConfig _indexLoadingConfig;
   private final SegmentDirectory.Writer _segmentWriter;
   private final String _segmentName;
   private final SegmentVersion _segmentVersion;
@@ -51,6 +56,7 @@ public class InvertedIndexHandler {
   public InvertedIndexHandler(@Nonnull File indexDir, @Nonnull SegmentMetadataImpl segmentMetadata,
       @Nonnull IndexLoadingConfig indexLoadingConfig, @Nonnull SegmentDirectory.Writer segmentWriter) {
     _indexDir = indexDir;
+    _indexLoadingConfig = indexLoadingConfig;
     _segmentWriter = segmentWriter;
     _segmentName = segmentMetadata.getName();
     _segmentVersion = SegmentVersion.valueOf(segmentMetadata.getVersion());
@@ -65,8 +71,20 @@ public class InvertedIndexHandler {
   }
 
   public void createInvertedIndices() throws IOException {
+    TextSearchIndexConfig textSearchConfig = _indexLoadingConfig.getTextSearchIndexConfig();
+    if (textSearchConfig == null) {
+      textSearchConfig = TextSearchIndexConfig.getDefaultConfig();
+    }
     for (ColumnMetadata columnMetadata : _invertedIndexColumns) {
-      createInvertedIndexForColumn(columnMetadata);
+      if (columnMetadata.getDataType() == FieldSpec.DataType.TEXT) {
+        NoDictionaryBasedInvertedIndexCreator indexer =
+            TextSearchIndexCreatorFactory.createSearchIndexer(textSearchConfig, columnMetadata.getColumnName(), _indexDir);
+        if (!indexer.indexExists(columnMetadata.getColumnName())) {
+          // create index
+        }
+      } else {
+        createInvertedIndexForColumn(columnMetadata);
+      }
     }
   }
 

@@ -13,20 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.linkedin.pinot.core.segment.creator;
+package com.linkedin.pinot.core.segment.index.readers;
 
-/**
- * A No-Dictionary based InvertedIndexCreator.
- */
-public interface NoDictionaryBasedInvertedIndexCreator extends InvertedIndexCreator {
+import java.io.Closeable;
 
-  /**
-   * Add a document field to the index
-   */
-  void add(Object doc);
+
+public interface SearchIndexReader<T> extends Closeable {
 
   /**
-   * Check if index exists for column.
+   * Get the document ids for the given search query.
    */
-  boolean indexExists(String column);
+  T getDocIds(String query, String options);
 }

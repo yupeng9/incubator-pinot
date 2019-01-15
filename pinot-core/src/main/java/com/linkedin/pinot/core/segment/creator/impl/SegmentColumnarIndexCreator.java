@@ -44,7 +44,7 @@ import com.linkedin.pinot.core.segment.creator.impl.fwd.SingleValueUnsortedForwa
 import com.linkedin.pinot.core.segment.creator.impl.fwd.SingleValueVarByteRawIndexCreator;
 import com.linkedin.pinot.core.segment.creator.impl.inv.OffHeapBitmapInvertedIndexCreator;
 import com.linkedin.pinot.core.segment.creator.impl.inv.OnHeapBitmapInvertedIndexCreator;
-import com.linkedin.pinot.core.segment.creator.impl.textsearch.TextSearchIndexConfig;
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
 import com.linkedin.pinot.core.segment.creator.impl.textsearch.TextSearchIndexCreatorFactory;
 import com.linkedin.pinot.startree.hll.HllConfig;
 import java.io.File;
@@ -190,12 +190,12 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
 
         boolean createFwdIndex = true;
         if(createInvertedIndex && type == FieldSpec.DataType.TEXT) {
-          TextSearchIndexConfig config = segmentCreationSpec.getTextSearchIndexConfigs().get(columnName);
+          TextSearchIndexConfig config = segmentCreationSpec.getTextSearchIndexConfig();
           if (config == null) {
-            config = TextSearchIndexConfig.getDefaultConfig(columnName, _indexDir);
+            config = TextSearchIndexConfig.getDefaultConfig();
           }
           createFwdIndex = config.shouldStore();
-          _noDictionaryIndexCreatorMap.put(columnName, TextSearchIndexCreatorFactory.createSearchIndexer(config));
+          _noDictionaryIndexCreatorMap.put(columnName, TextSearchIndexCreatorFactory.createSearchIndexer(config, columnName, _indexDir));
         }
 
         if (createFwdIndex) {
@@ -318,8 +318,8 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
     for (InvertedIndexCreator invertedIndexCreator : _invertedIndexCreatorMap.values()) {
       invertedIndexCreator.seal();
     }
-    for (NoDictionaryBasedInvertedIndexCreator docIndexCreator : _noDictionaryIndexCreatorMap.values()) {
-      docIndexCreator.seal();
+    for (NoDictionaryBasedInvertedIndexCreator noDictIndexCreator : _noDictionaryIndexCreatorMap.values()) {
+      noDictIndexCreator.seal();
     }
     writeMetadata();
   }
@@ -569,8 +569,8 @@ public class SegmentColumnarIndexCreator implements SegmentCreator {
     for (InvertedIndexCreator invertedIndexCreator : _invertedIndexCreatorMap.values()) {
       invertedIndexCreator.close();
     }
-    for (NoDictionaryBasedInvertedIndexCreator docIndexCreator : _noDictionaryIndexCreatorMap.values()) {
-      docIndexCreator.close();
+    for (NoDictionaryBasedInvertedIndexCreator noDictIndexCreator : _noDictionaryIndexCreatorMap.values()) {
+      noDictIndexCreator.close();
     }
   }
 }

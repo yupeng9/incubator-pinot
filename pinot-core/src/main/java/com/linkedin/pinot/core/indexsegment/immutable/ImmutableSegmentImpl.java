@@ -24,6 +24,7 @@ import com.linkedin.pinot.core.segment.index.column.ColumnIndexContainer;
 import com.linkedin.pinot.core.segment.index.data.source.ColumnDataSource;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
 import com.linkedin.pinot.core.segment.store.SegmentDirectory;
 import com.linkedin.pinot.core.startree.v2.StarTreeV2;
 import com.linkedin.pinot.core.startree.v2.store.StarTreeIndexContainer;
@@ -67,6 +68,11 @@ public class ImmutableSegmentImpl implements ImmutableSegment {
   @Override
   public InvertedIndexReader getInvertedIndex(String column) {
     return _indexContainerMap.get(column).getInvertedIndex();
+  }
+
+  @Override
+  public SearchIndexReader getSearchIndex(String column) {
+    return _indexContainerMap.get(column).getSearchIndex();
   }
 
   @Override

@@ -78,6 +78,9 @@ public class IndexingConfig {
   @ConfigKey("starTreeIndexConfigs")
   private List<StarTreeIndexConfig> _starTreeIndexConfigs;
 
+  @ConfigKey("textSearchIndexConfig")
+  private TextSearchIndexConfig _textSearchIndexConfig;
+
   @ConfigKey("segmentPartitionConfig")
   private SegmentPartitionConfig _segmentPartitionConfig;
 
@@ -203,6 +206,14 @@ public class IndexingConfig {
 
   public void setStarTreeIndexConfigs(List<StarTreeIndexConfig> starTreeIndexConfigs) {
     _starTreeIndexConfigs = starTreeIndexConfigs;
+  }
+
+  public TextSearchIndexConfig getTextSearchIndexConfig() {
+    return _textSearchIndexConfig;
+  }
+
+  public void setTextSearchIndexConfig(TextSearchIndexConfig config) {
+    _textSearchIndexConfig = config;
   }
 
   public void setSegmentPartitionConfig(SegmentPartitionConfig config) {

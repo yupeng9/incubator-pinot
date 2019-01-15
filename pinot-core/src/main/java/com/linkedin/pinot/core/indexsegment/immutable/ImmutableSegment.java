@@ -20,6 +20,7 @@ import com.linkedin.pinot.core.io.reader.DataFileReader;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import com.linkedin.pinot.core.segment.index.readers.ImmutableDictionaryReader;
 import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
 
 
 public interface ImmutableSegment extends IndexSegment {
@@ -47,6 +48,14 @@ public interface ImmutableSegment extends IndexSegment {
    * @return Inverted index for the given column, or null if the given column does not have one
    */
   InvertedIndexReader getInvertedIndex(String column);
+
+  /**
+   * Returns the search index for the given column.
+   *
+   * @param column Column name
+   * @return Search index for the given column, or null if the given column does not have one
+   */
+  SearchIndexReader getSearchIndex(String column);
 
   /**
    * Returns the total size of the segment in bytes.

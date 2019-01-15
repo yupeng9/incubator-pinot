@@ -17,9 +17,9 @@ package com.linkedin.pinot.core.common;
 
 /**
  *
- * A block represents a set of rows.A segment will contain one or more blocks
- * Currently, it assumes only one column per block. We might change this in
- * future
+ * A block represents a set of rows. A segment will contain one or more blocks.
+ * Currently, it assumes only one column per block. We might change this in the
+ * future.
  */
 public interface Block {
 

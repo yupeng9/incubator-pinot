@@ -39,7 +39,7 @@ public class TextMatchPredicateEvaluatorFactory {
     return new RawValueBasedTextMatchPredicateEvaluator(textMatchPredicate);
   }
 
-  private static final class RawValueBasedTextMatchPredicateEvaluator extends BaseRawValueBasedPredicateEvaluator {
+  public static final class RawValueBasedTextMatchPredicateEvaluator extends BaseRawValueBasedPredicateEvaluator {
     String _query;
     String _options;
     public RawValueBasedTextMatchPredicateEvaluator(TextMatchPredicate textMatchPredicate) {
@@ -55,6 +55,14 @@ public class TextMatchPredicateEvaluatorFactory {
     @Override
     public boolean applySV(String value) {
       throw new UnsupportedOperationException("Text Match is not supported via scanning, its supported only via inverted index");
+    }
+
+    public String getQueryString() {
+      return _query;
+    }
+
+    public String getQueryOptions() {
+      return _options;
     }
   }
 }

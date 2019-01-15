@@ -18,9 +18,13 @@ package com.linkedin.pinot.core.operator.filter;
 import com.google.common.base.Preconditions;
 import com.linkedin.pinot.core.common.DataSource;
 import com.linkedin.pinot.core.operator.blocks.FilterBlock;
+import com.linkedin.pinot.core.operator.docidsets.ArrayBasedDocIdSet;
 import com.linkedin.pinot.core.operator.docidsets.BitmapDocIdSet;
+import com.linkedin.pinot.core.operator.docidsets.LuceneDocIdSet;
 import com.linkedin.pinot.core.operator.filter.predicate.PredicateEvaluator;
-import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
+import com.linkedin.pinot.core.operator.filter.predicate.TextMatchPredicateEvaluatorFactory.*;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
+import org.apache.lucene.search.TopDocs;
 import org.roaringbitmap.buffer.ImmutableRoaringBitmap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,14 +37,14 @@ public class TextMatchFilterOperator extends BaseFilterOperator {
   private static final Logger LOGGER = LoggerFactory.getLogger(TextMatchFilterOperator.class);
   private static final String OPERATOR_NAME = "TextMatchFilterOperator";
 
-  private final PredicateEvaluator _predicateEvaluator;
+  private final String _query;
+  private final String _options;
   private final DataSource _dataSource;
-  private final ImmutableRoaringBitmap[] _bitmaps;
   private final int _startDocId;
   // TODO: change it to exclusive
   // Inclusive
   private final int _endDocId;
-  private final boolean _exclusive;
+  private TopDocs _docs;
 
   TextMatchFilterOperator(PredicateEvaluator predicateEvaluator, DataSource dataSource, int startDocId,
                           int endDocId) {
@@ -50,18 +54,24 @@ public class TextMatchFilterOperator extends BaseFilterOperator {
     // If predicate is always evaluated as true, use MatchAllFilterOperator; if predicate is always evaluated as false,
     // use EmptyFilterOperator.
     Preconditions.checkArgument(!predicateEvaluator.isAlwaysTrue() && !predicateEvaluator.isAlwaysFalse());
+    Preconditions.checkArgument(predicateEvaluator instanceof RawValueBasedTextMatchPredicateEvaluator);
 
-    _predicateEvaluator = predicateEvaluator;
+    RawValueBasedTextMatchPredicateEvaluator evaluator = (RawValueBasedTextMatchPredicateEvaluator) predicateEvaluator;
+    _query = evaluator.getQueryString();
+    _options = evaluator.getQueryOptions();
     _dataSource = dataSource;
-    _bitmaps = null;
     _startDocId = startDocId;
     _endDocId = endDocId;
-    _exclusive = predicateEvaluator.isExclusive();
   }
 
   @Override
   protected FilterBlock getNextBlock() {
-    throw new UnsupportedOperationException("WIP");
+
+    if (_docs == null) {
+      SearchIndexReader<TopDocs> searchIndex = _dataSource.getSearchIndex();
+      _docs = searchIndex.getDocIds(_query, _options);
+    }
+    return new FilterBlock(new LuceneDocIdSet(_docs.scoreDocs, _startDocId, _endDocId));
   }
 
   @Override

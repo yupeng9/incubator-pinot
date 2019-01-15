@@ -19,6 +19,7 @@ import com.linkedin.pinot.core.io.reader.DataFileReader;
 import com.linkedin.pinot.core.segment.index.readers.BloomFilterReader;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
 
 
 /**
@@ -37,9 +38,14 @@ public interface ColumnIndexContainer {
   InvertedIndexReader getInvertedIndex();
 
   /**
+   * Returns the search index for the column or {@code null} if it does not exist.
+   */
+  SearchIndexReader getSearchIndex();
+
+  /**
    * Returns the dictionary for the column, or {@code null} if it does not exist.
    */
   Dictionary getDictionary();
-  
+
   BloomFilterReader getBloomFilter();
 }

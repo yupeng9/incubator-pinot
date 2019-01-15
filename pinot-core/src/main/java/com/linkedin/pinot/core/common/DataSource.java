@@ -19,6 +19,8 @@ import com.linkedin.pinot.core.operator.BaseOperator;
 import com.linkedin.pinot.core.segment.index.readers.BloomFilterReader;
 import com.linkedin.pinot.core.segment.index.readers.Dictionary;
 import com.linkedin.pinot.core.segment.index.readers.InvertedIndexReader;
+import com.linkedin.pinot.core.segment.index.readers.SearchIndexReader;
+
 
 public abstract class DataSource extends BaseOperator {
 
@@ -26,7 +28,9 @@ public abstract class DataSource extends BaseOperator {
 
   public abstract InvertedIndexReader getInvertedIndex();
 
+  public abstract SearchIndexReader getSearchIndex();
+
   public abstract Dictionary getDictionary();
-  
-  public abstract BloomFilterReader getBloomFilter();  
+
+  public abstract BloomFilterReader getBloomFilter();
 }

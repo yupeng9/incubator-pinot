@@ -15,16 +15,19 @@
  */
 package com.linkedin.pinot.core.segment.creator.impl.textsearch;
 
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
 import com.linkedin.pinot.core.segment.creator.NoDictionaryBasedInvertedIndexCreator;
+import java.io.File;
 
 
 public class TextSearchIndexCreatorFactory {
 
-   public static NoDictionaryBasedInvertedIndexCreator createSearchIndexer(TextSearchIndexConfig config) {
+   public static NoDictionaryBasedInvertedIndexCreator createSearchIndexer(TextSearchIndexConfig config,
+       String columnName, File indexDir) {
 
      switch (config.getType()) {
-       case LUCENE:
-         return new LuceneIndexCreator(config);
+       case "LUCENE":
+         return new LuceneIndexCreator(config, columnName, indexDir);
        default:
          throw new IllegalArgumentException("Unsupported TextSearchIndexType " + config.getType());
      }

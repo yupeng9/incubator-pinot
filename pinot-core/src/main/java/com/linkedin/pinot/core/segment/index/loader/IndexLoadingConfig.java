@@ -18,6 +18,7 @@ package com.linkedin.pinot.core.segment.index.loader;
 import com.google.common.annotations.VisibleForTesting;
 import com.linkedin.pinot.common.config.IndexingConfig;
 import com.linkedin.pinot.common.config.TableConfig;
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
 import com.linkedin.pinot.common.segment.ReadMode;
 import com.linkedin.pinot.core.data.manager.config.InstanceDataManagerConfig;
 import com.linkedin.pinot.core.indexsegment.generator.SegmentVersion;
@@ -45,6 +46,7 @@ public class IndexLoadingConfig {
   private Map<String, String> _noDictionaryConfig = new HashMap<>();
   private Set<String> _onHeapDictionaryColumns = new HashSet<>();
   private Set<String> _bloomFilterColumns = new HashSet<>();
+  private TextSearchIndexConfig _textSearchIndexConfig;
 
   private SegmentVersion _segmentVersion;
   // This value will remain true only when the empty constructor is invoked.
@@ -108,6 +110,8 @@ public class IndexLoadingConfig {
       _columnMinMaxValueGeneratorMode =
           ColumnMinMaxValueGeneratorMode.valueOf(columnMinMaxValueGeneratorMode.toUpperCase());
     }
+
+    _textSearchIndexConfig = indexingConfig.getTextSearchIndexConfig();
   }
 
   private void extractFromInstanceConfig(@Nonnull InstanceDataManagerConfig instanceDataManagerConfig) {
@@ -203,6 +207,10 @@ public class IndexLoadingConfig {
   @Nullable
   public SegmentVersion getSegmentVersion() {
     return _segmentVersion;
+  }
+
+  public TextSearchIndexConfig getTextSearchIndexConfig() {
+    return _textSearchIndexConfig;
   }
 
   /**

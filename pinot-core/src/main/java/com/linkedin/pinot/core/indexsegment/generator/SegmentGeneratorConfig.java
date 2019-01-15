@@ -30,7 +30,7 @@ import com.linkedin.pinot.core.data.readers.CSVRecordReaderConfig;
 import com.linkedin.pinot.core.data.readers.FileFormat;
 import com.linkedin.pinot.core.data.readers.RecordReaderConfig;
 import com.linkedin.pinot.core.io.compression.ChunkCompressorFactory;
-import com.linkedin.pinot.core.segment.creator.impl.textsearch.TextSearchIndexConfig;
+import com.linkedin.pinot.common.config.TextSearchIndexConfig;
 import com.linkedin.pinot.core.segment.name.DefaultSegmentNameGenerator;
 import com.linkedin.pinot.core.segment.name.SegmentNameGenerator;
 import com.linkedin.pinot.core.startree.v2.builder.StarTreeV2BuilderConfig;
@@ -106,7 +106,7 @@ public class SegmentGeneratorConfig {
   private String _simpleDateFormat = null;
   // Use on-heap or off-heap memory to generate index (currently only affect inverted index and star-tree v2)
   private boolean _onHeap = false;
-  private Map<String, TextSearchIndexConfig> _textSearchIndexConfigs = new HashMap<>();
+  private TextSearchIndexConfig _textSearchIndexConfig;
 
   public SegmentGeneratorConfig() {
   }
@@ -573,11 +573,11 @@ public class SegmentGeneratorConfig {
   }
 
   public void setTextSearchIndexConfig(TextSearchIndexConfig config) {
-    _textSearchIndexConfigs.put(config.getColumnName(),config);
+    _textSearchIndexConfig = config;
   }
 
-  public Map<String, TextSearchIndexConfig> getTextSearchIndexConfigs() {
-    return _textSearchIndexConfigs;
+  public TextSearchIndexConfig getTextSearchIndexConfig() {
+    return _textSearchIndexConfig;
   }
 
   @JsonIgnore

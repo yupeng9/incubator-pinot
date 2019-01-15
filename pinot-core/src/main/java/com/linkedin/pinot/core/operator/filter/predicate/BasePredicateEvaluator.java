@@ -15,6 +15,9 @@
  */
 package com.linkedin.pinot.core.operator.filter.predicate;
 
+import com.linkedin.pinot.core.common.Predicate;
+
+
 public abstract class BasePredicateEvaluator implements PredicateEvaluator {
 
   @Override
