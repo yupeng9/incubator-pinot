@@ -33,6 +33,7 @@ import org.apache.pinot.controller.helix.core.PinotHelixResourceManager;
 import org.apache.pinot.controller.helix.core.minion.generator.PinotTaskGenerator;
 import org.apache.pinot.controller.helix.core.minion.generator.TaskGeneratorRegistry;
 import org.apache.pinot.controller.helix.core.periodictask.ControllerPeriodicTask;
+import org.apache.pinot.core.common.MinionConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -147,6 +148,20 @@ public class PinotTaskManager extends ControllerPeriodicTask<Void> {
         _controllerMetrics.addMeteredTableValue(taskType, ControllerMeter.NUMBER_TASKS_SUBMITTED, numTasks);
       }
     }
+
+    // submit a dummy empty job here.
+
+    String taskType = taskTypes.iterator().next();
+    List<PinotTaskConfig> dummyJob = new ArrayList<>();
+    Map<String, String> configs = new HashMap<>();
+    configs.put(MinionConstants.TABLE_NAME_KEY, tableNamesWithType.get(0));
+    configs.put(MinionConstants.SEGMENT_NAME_KEY, "");
+    dummyJob.add(new PinotTaskConfig(taskType, configs));
+    _helixTaskResourceManager.submitTask(dummyJob, 1);
+//    List<PinotTaskConfig> dummyJob = new ArrayList<>();
+//    Map<String, String> configs = new HashMap<>();
+//    dummyJob.add(new PinotTaskConfig(MinionConstants.ConvertToRawIndexTask.COLUMNS_TO_CONVERT_KEY, configs));
+//    _helixTaskResourceManager.submitTask(dummyJob, 1);
 
     return tasksScheduled;
   }

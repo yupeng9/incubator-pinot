@@ -27,6 +27,7 @@ import org.apache.helix.task.TaskConfig;
 import org.apache.helix.task.TaskFactory;
 import org.apache.helix.task.TaskResult;
 import org.apache.pinot.common.config.PinotTaskConfig;
+import org.apache.pinot.core.common.MinionConstants;
 import org.apache.pinot.minion.MinionContext;
 import org.apache.pinot.minion.events.EventObserverFactoryRegistry;
 import org.apache.pinot.minion.events.MinionEventObserver;
@@ -73,6 +74,11 @@ public class TaskFactoryRegistry {
               MinionMetrics minionMetrics = MinionContext.getInstance().getMinionMetrics();
 
               PinotTaskConfig pinotTaskConfig = PinotTaskConfig.fromHelixTaskConfig(_taskConfig);
+              Map<String, String> configs = pinotTaskConfig.getConfigs();
+              // Dummy task.
+              if (configs.get(MinionConstants.DOWNLOAD_URL_KEY) == null && configs.get(MinionConstants.UPLOAD_URL_KEY) == null) {
+                return new TaskResult(TaskResult.Status.COMPLETED, "Succeeded");
+              }
               _eventObserver.notifyTaskStart(pinotTaskConfig);
               minionMetrics.addMeteredTableValue(taskType, MinionMeter.NUMBER_TASKS_EXECUTED, 1L);
               LOGGER.info("Start running {}: {} with configs: {}", pinotTaskConfig.getTaskType(), _taskConfig.getId(),
